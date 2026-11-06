@@ -1,9 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="8" fill="#17372a"/>
-  <g stroke="#d9fa8b" stroke-width="1.4">
+  <g stroke="#305b45" stroke-width="1.5">
     <circle cx="16" cy="16" r="10"/>
     <circle cx="16" cy="16" r="5"/>
     <path d="m16 16 8-8"/>
   </g>
-  <circle cx="16" cy="16" r="1.5" fill="#d9fa8b"/>
+  <circle cx="16" cy="16" r="1.5" fill="#305b45"/>
 </svg>
