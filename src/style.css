@@ -339,7 +339,7 @@ button:disabled { opacity: 0.6; cursor: default; }
 
 .repo-meta {
   display: grid;
-  gap: var(--space-1);
+  gap: var(--space-2);
   margin-top: auto;
   padding-top: var(--space-3);
   border-top: 1px solid var(--border-soft);
@@ -351,26 +351,46 @@ button:disabled { opacity: 0.6; cursor: default; }
   align-items: center;
   gap: 2px var(--space-3);
 }
+.repo-facts { gap: 6px var(--space-2); }
 
 .repo-language, .repo-stars {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-height: 26px;
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-sm);
   font-size: var(--text-xs);
 }
 
-.repo-language { color: var(--forest); font-weight: 650; overflow-wrap: anywhere; }
-.repo-language.repo-missing { color: var(--muted); }
+.repo-language {
+  color: color-mix(in srgb, var(--language-color) 40%, var(--fg));
+  background: color-mix(in srgb, var(--language-color) 10%, var(--surface));
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.repo-language.repo-missing { color: var(--muted); background: var(--bg); }
 .repo-language::before {
   content: "";
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   flex: none;
   border-radius: 50%;
-  background: currentColor;
+  background: var(--language-color);
 }
-.repo-stars { color: var(--fg-2); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-.repo-stars svg { width: 14px; height: 14px; }
+.repo-stars {
+  color: #85560b;
+  background: #fff5dc;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.repo-stars svg {
+  width: 14px;
+  height: 14px;
+  color: #c58a16;
+  fill: currentColor;
+}
 .repo-dates { color: var(--muted); font-size: var(--text-xs); }
 .repo-dates div { display: flex; gap: var(--space-1); }
 .repo-dates time { white-space: nowrap; font-variant-numeric: tabular-nums; }

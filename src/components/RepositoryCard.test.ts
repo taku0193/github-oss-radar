@@ -38,4 +38,20 @@ describe('RepositoryCard', () => {
     expect(html).toContain('説明はありません')
     expect(html).toContain('言語未設定')
   })
+
+  it('applies the repository language accent while keeping the language label readable', async () => {
+    const html = await renderToString(createSSRApp(RepositoryCard, { repository }))
+
+    expect(html).toContain('--language-color:#3178c6')
+    expect(html).toContain('TypeScript')
+  })
+
+  it('keeps repositories without a language visually neutral', async () => {
+    const html = await renderToString(createSSRApp(RepositoryCard, {
+      repository: { ...repository, language: null },
+    }))
+
+    expect(html).toContain('--language-color:#8b949e')
+    expect(html).toContain('言語未設定')
+  })
 })

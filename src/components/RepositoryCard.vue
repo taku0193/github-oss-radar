@@ -7,6 +7,7 @@ const numberFormat = new Intl.NumberFormat('ja-JP')
 import { computed, onMounted, onUnmounted, ref, useId } from 'vue'
 import type { Repository } from '../github'
 import { translateToJapanese } from '../translation'
+import { languageColor } from '../languageColors'
 
 const props = defineProps<{ repository: Repository; bookmarked?: boolean }>()
 const emit = defineEmits<{ toggleBookmark: [] }>()
@@ -111,7 +112,11 @@ onUnmounted(() => {
 
     <div class="repo-meta">
       <div class="repo-facts">
-        <span class="repo-language" :class="{ 'repo-missing': !repository.language }">
+        <span
+          class="repo-language"
+          :class="{ 'repo-missing': !repository.language }"
+          :style="{ '--language-color': languageColor(repository.language) }"
+        >
           {{ repository.language || '言語未設定' }}
         </span>
         <span class="repo-stars">
