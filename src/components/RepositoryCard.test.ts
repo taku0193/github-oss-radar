@@ -18,7 +18,7 @@ const repository: Repository = {
 
 describe('RepositoryCard', () => {
   it('shows repository details and links to the GitHub page', async () => {
-    const html = await renderToString(createSSRApp(RepositoryCard, { repository, rank: 1 }))
+    const html = await renderToString(createSSRApp(RepositoryCard, { repository }))
 
     expect(html).toContain('href="https://github.com/octo/radar"')
     expect(html).toContain('aria-label="GitHubで octo/radar を開く"')
@@ -27,12 +27,12 @@ describe('RepositoryCard', () => {
     expect(html).toContain('TypeScript')
     expect(html).toContain('datetime="2026-10-21T10:30:00Z"')
     expect(html).toContain('datetime="2026-11-05T09:00:00Z"')
+    expect(html).not.toContain('repo-rank')
   })
 
   it('shows fallback labels when GitHub has no description or language', async () => {
     const html = await renderToString(createSSRApp(RepositoryCard, {
       repository: { ...repository, description: null, language: null },
-      rank: 2,
     }))
 
     expect(html).toContain('説明はありません')
