@@ -1,9 +1,13 @@
 export const SEARCH_WINDOW_DAYS = 30
 export const SEARCH_PAGE_SIZE = 24
+export const SEARCH_MIN_STARS = 100
+export const SEARCH_KEYWORD_LIMIT = 100
+const SEARCH_RESULT_LIMIT = 1000
 
 export interface Repository {
   id: number
   owner: string
+  avatarUrl?: string
   name: string
   url: string
   description: string | null
@@ -11,16 +15,24 @@ export interface Repository {
   language: string | null
   createdAt: string
   updatedAt: string
+  topics?: string[]
 }
 
-interface SearchResult {
+export interface SearchResult {
   repositories: Repository[]
   incomplete: boolean
+  nextPage: URL | null
+}
+
+export interface SearchFilters {
+  keyword?: string
+  language?: string
+  topic?: string
 }
 
 interface GitHubRepository {
   id: number
-  owner: { login: string }
+  owner: { login: string; avatar_url?: string }
   name: string
   html_url: string
   description: string | null
@@ -28,11 +40,13 @@ interface GitHubRepository {
   language: string | null
   created_at: string
   updated_at: string
+  topics?: string[]
 }
 
 interface GitHubSearchResponse {
   items: GitHubRepository[]
   incomplete_results: boolean
+  total_count?: number
 }
 
 export class GitHubSearchError extends Error {
@@ -50,17 +64,36 @@ export class GitHubSearchError extends Error {
 export async function searchRepositories(
   fetcher: typeof fetch = fetch,
   now?: Date,
+  filters: SearchFilters = {},
 ): Promise<SearchResult> {
   const cutoff = new Date((now?.getTime() ?? Date.now()) - SEARCH_WINDOW_DAYS * 86_400_000)
   const since = cutoff.toISOString().replace(/\.\d{3}Z$/, 'Z')
+  const terms = filters.keyword?.slice(0, SEARCH_KEYWORD_LIMIT).match(/[^\s:"\\]+/g) ?? []
+  const language = filters.language?.replace(/["\\]/g, '').trim()
+  const query = [
+    ...terms.map((term) => `"${term}"`),
+    terms.length && 'in:name,description',
+    language && `language:"${language}"`,
+    filters.topic && `topic:${filters.topic}`,
+    `created:>=${since}`,
+    `stars:>=${SEARCH_MIN_STARS}`,
+    'is:public',
+    'fork:false',
+  ].filter(Boolean).join(' ')
   const url = new URL('https://api.github.com/search/repositories')
   url.search = new URLSearchParams({
-    q: `created:>=${since} is:public fork:false`,
-    sort: 'stars',
-    order: 'desc',
+    q: query,
     per_page: String(SEARCH_PAGE_SIZE),
   }).toString()
 
+  return fetchRepositoryPage(url, fetcher, now)
+}
+
+export async function fetchRepositoryPage(
+  url: URL,
+  fetcher: typeof fetch = fetch,
+  now?: Date,
+): Promise<SearchResult> {
   const response = await fetcher(url, { headers: { Accept: 'application/vnd.github+json' } })
 
   if (!response.ok) {
@@ -72,10 +105,20 @@ export async function searchRepositories(
     throw new GitHubSearchError('api', 'GitHub Search returned an invalid response')
   }
 
+  const page = Number(url.searchParams.get('page') ?? 1)
+  const pageSize = Number(url.searchParams.get('per_page') ?? SEARCH_PAGE_SIZE)
+  const total = Math.min(body.total_count ?? body.items.length, SEARCH_RESULT_LIMIT)
+  let nextPage = null
+  if (body.items.length && page * pageSize < total) {
+    nextPage = new URL(url)
+    nextPage.searchParams.set('page', String(page + 1))
+  }
+
   return {
-    repositories: body.items.map((item) => ({
+    repositories: body.items.filter((item) => item.stargazers_count >= SEARCH_MIN_STARS).map((item) => ({
       id: item.id,
       owner: item.owner.login,
+      avatarUrl: item.owner.avatar_url,
       name: item.name,
       url: item.html_url,
       description: item.description,
@@ -83,8 +126,10 @@ export async function searchRepositories(
       language: item.language,
       createdAt: item.created_at,
       updatedAt: item.updated_at,
+      topics: item.topics ?? [],
     })),
     incomplete: body.incomplete_results === true,
+    nextPage,
   }
 }
 

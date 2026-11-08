@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { searchRepositories } from './github'
+import { fetchRepositoryPage, searchRepositories } from './github'
+import { recommendRepositories } from './recommendations'
 
 const now = new Date('2026-11-06T15:30:00Z')
 
@@ -16,9 +17,12 @@ const item = {
 }
 
 describe('searchRepositories', () => {
-  it('requests the first 24 recent public non-forks by descending star count without a token', async () => {
+  it('requests recent public non-forks with at least 100 stars in GitHub search order', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
-      Response.json({ items: [item], incomplete_results: false }),
+      Response.json({
+        items: [{ ...item, id: 7, stargazers_count: 100 }, item, { ...item, id: 8, stargazers_count: 99 }],
+        incomplete_results: false,
+      }),
     )
 
     const result = await searchRepositories(fetcher, now)
@@ -28,28 +32,37 @@ describe('searchRepositories', () => {
     const url = new URL(String(input))
     expect(url.origin + url.pathname).toBe('https://api.github.com/search/repositories')
     expect(Object.fromEntries(url.searchParams)).toEqual({
-      q: 'created:>=2026-10-07T15:30:00Z is:public fork:false',
-      sort: 'stars',
-      order: 'desc',
+      q: 'created:>=2026-10-07T15:30:00Z stars:>=100 is:public fork:false',
       per_page: '24',
     })
     const headers = new Headers(options?.headers)
     expect(headers.get('accept')).toBe('application/vnd.github+json')
     expect(headers.has('authorization')).toBe(false)
-    expect(result).toEqual({
-      repositories: [{
-        id: 42,
-        owner: 'octo',
-        name: 'radar',
-        url: 'https://github.com/octo/radar',
-        description: 'Find new projects.',
-        stars: 1234,
-        language: 'TypeScript',
-        createdAt: '2026-10-21T10:30:00Z',
-        updatedAt: '2026-11-05T09:00:00Z',
-      }],
-      incomplete: false,
+    expect(result.repositories.map(({ id }) => id)).toEqual([7, 42])
+    expect(result.repositories[1]).toEqual({
+      id: 42,
+      owner: 'octo',
+      name: 'radar',
+      url: 'https://github.com/octo/radar',
+      description: 'Find new projects.',
+      stars: 1234,
+      language: 'TypeScript',
+      createdAt: '2026-10-21T10:30:00Z',
+      updatedAt: '2026-11-05T09:00:00Z',
+      topics: [],
     })
+    expect(result.incomplete).toBe(false)
+  })
+
+  it('treats a keyword as search text and applies the selected language', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ items: [] }))
+
+    await searchRepositories(fetcher, now, { keyword: ' markdown  editor ', language: 'TypeScript' })
+
+    const [input] = fetcher.mock.calls[0]!
+    expect(new URL(String(input)).searchParams.get('q')).toBe(
+      '"markdown" "editor" in:name,description language:"TypeScript" created:>=2026-10-07T15:30:00Z stars:>=100 is:public fork:false',
+    )
   })
 
   it('preserves missing descriptions and languages and flags incomplete results', async () => {
@@ -72,7 +85,70 @@ describe('searchRepositories', () => {
     await expect(searchRepositories(fetcher, now)).resolves.toEqual({
       repositories: [],
       incomplete: false,
+      nextPage: null,
     })
+  })
+
+  it('continues with the same query and stops when it reaches the reported total', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ items: [item], total_count: 25 }))
+      .mockResolvedValueOnce(Response.json({ items: [{ ...item, id: 43 }], total_count: 25 }))
+
+    const first = await searchRepositories(fetcher, now, { keyword: 'markdown', language: 'TypeScript' })
+    expect(first.nextPage?.searchParams.get('page')).toBe('2')
+    expect(first.nextPage?.searchParams.get('q')).toBe(new URL(String(fetcher.mock.calls[0]?.[0])).searchParams.get('q'))
+
+    const second = await fetchRepositoryPage(first.nextPage!, fetcher, now)
+    expect(second.repositories.map(({ id }) => id)).toEqual([43])
+    expect(second.nextPage).toBeNull()
+  })
+
+  it('stops paging after the GitHub Search limit', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ items: [item], total_count: 2000 }))
+    const url = new URL('https://api.github.com/search/repositories?per_page=24&page=42')
+
+    await expect(fetchRepositoryPage(url, fetcher, now)).resolves.toMatchObject({ nextPage: null })
+  })
+
+  it('recommends unsaved repositories with a shared topic', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ items: [{ ...item, topics: ['markdown'] }] }))
+      .mockResolvedValueOnce(Response.json({ items: [item, { ...item, id: 43 }, { ...item, id: 44 }] }))
+    const seed = (await searchRepositories(fetcher, now)).repositories[0]!
+
+    const result = await recommendRepositories(seed, new Set([43]), fetcher, now)
+
+    expect(result.reason).toBe('共通トピック「markdown」')
+    expect(result.repositories.map(({ id }) => id)).toEqual([44])
+    expect(new URL(String(fetcher.mock.calls[1]?.[0])).searchParams.get('q')).toContain('topic:markdown')
+  })
+
+  it('recommends by language for bookmarks saved without topics', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ items: [{ ...item, id: 43 }] }))
+    const seed = {
+      id: 42, name: 'radar', owner: 'octo', url: item.html_url,
+      stars: 1234, language: 'TypeScript', description: null,
+      createdAt: item.created_at, updatedAt: item.updated_at,
+    }
+
+    const result = await recommendRepositories(seed, new Set(), fetcher, now)
+
+    expect(result.reason).toBe('同じ言語「TypeScript」')
+    expect(result.repositories).toHaveLength(1)
+    expect(new URL(String(fetcher.mock.calls[0]?.[0])).searchParams.get('q')).toContain('language:"TypeScript"')
+  })
+
+  it('tries the same language when every result for the topic is already saved', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ items: [{ ...item, topics: ['markdown'] }] }))
+      .mockResolvedValueOnce(Response.json({ items: [{ ...item, id: 43 }] }))
+      .mockResolvedValueOnce(Response.json({ items: [{ ...item, id: 44 }] }))
+    const seed = (await searchRepositories(fetcher, now)).repositories[0]!
+
+    const result = await recommendRepositories(seed, new Set([43]), fetcher, now)
+
+    expect(result.reason).toBe('同じ言語「TypeScript」')
+    expect(result.repositories.map(({ id }) => id)).toEqual([44])
   })
 
   it('distinguishes the primary rate limit and exposes the reset time', async () => {
