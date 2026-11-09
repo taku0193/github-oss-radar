@@ -463,7 +463,7 @@ button:disabled { opacity: 0.6; cursor: default; }
   gap: 2px var(--space-3);
 }
 .repo-facts { gap: 6px var(--space-2); }
-.repo-position { color: #8994a5; font-size: 11px; }
+.repo-position { color: var(--muted); font-size: 11px; }
 .repo-growth { color: #537091; font-size: 11px; }
 
 .repo-language, .repo-stars {
