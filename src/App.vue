@@ -3,6 +3,8 @@ import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { readBookmarks, setBookmarked } from './bookmarks'
 import RepositoryCard from './components/RepositoryCard.vue'
 import RankingSelector from './components/RankingSelector.vue'
+import CompareDialog from './components/CompareDialog.vue'
+import { useComparison } from './comparison'
 import {
   fetchRepositoryPage,
   GitHubSearchError,
@@ -38,6 +40,8 @@ const bookmarks = shallowRef<Repository[]>([])
 const bookmarkIds = computed(() => new Set(bookmarks.value.map(({ id }) => id)))
 const { view, recommendationOrigin, show, openRecommendations, backFromRecommendations, resetSearchPosition } = useBrowseNavigation()
 const bookmarkError = ref('')
+const { repositories: comparison, ids: comparisonIds, full: comparisonFull, canCompare, toggle: toggleComparison, clear: clearComparison } = useComparison()
+const comparisonOpen = ref(false)
 const { keyword, language, activeFilters, ranking, hasAppliedFilters, hasDraftChanges,
   applyDraft, selectRanking, removeCondition } = useSearchFilters()
 const languages = ['JavaScript', 'TypeScript', 'Python', 'Rust', 'Go', 'Ruby', 'Java', 'C', 'C++', 'C#', 'Dart', 'Kotlin', 'Swift', 'PHP', 'Shell', 'HTML', 'CSS', 'Vue']
@@ -212,7 +216,7 @@ onUnmounted(() => window.clearTimeout(retryTimer))
     <p v-if="bookmarkError" class="shell bookmark-error" role="alert">{{ bookmarkError }}</p>
   </header>
 
-  <main class="shell dashboard">
+  <main class="shell dashboard" :class="{ 'dashboard--with-tray': comparison.length }">
     <section v-if="recommendation" v-show="view === 'recommendations'" class="collection" aria-labelledby="recommendation-title">
       <div class="results-header">
         <div>
@@ -235,6 +239,9 @@ onUnmounted(() => window.clearTimeout(retryTimer))
             <RepositoryCard
               :repository="repository"
               :bookmarked="bookmarkIds.has(repository.id)"
+              :compared="comparisonIds.has(repository.id)"
+              :compare-disabled="comparisonFull"
+              @toggle-compare="toggleComparison(repository)"
               @toggle-bookmark="toggleBookmark(repository)"
             />
           </li>
@@ -258,7 +265,7 @@ onUnmounted(() => window.clearTimeout(retryTimer))
       </div>
       <ul v-if="bookmarks.length" class="repository-grid" role="list" aria-label="保存済みリポジトリ">
         <li v-for="repository in bookmarks" :key="repository.id" :data-reading-id="`saved-${repository.id}`">
-          <RepositoryCard :repository="repository" bookmarked @toggle-bookmark="toggleBookmark(repository)">
+          <RepositoryCard :repository="repository" bookmarked :compared="comparisonIds.has(repository.id)" :compare-disabled="comparisonFull" @toggle-compare="toggleComparison(repository)" @toggle-bookmark="toggleBookmark(repository)">
             <template #actions>
               <button type="button" class="similar-button" :disabled="requestBlocked" @click="loadRecommendations(repository)">似たリポジトリを探す <span aria-hidden="true">→</span></button>
             </template>
@@ -396,6 +403,9 @@ onUnmounted(() => window.clearTimeout(retryTimer))
               :repository="repository"
               :position="index + 1"
               :daily-stars="ranking === 'rising' ? risingScore(repository, rankingReference) : undefined"
+              :compared="comparisonIds.has(repository.id)"
+              :compare-disabled="comparisonFull"
+              @toggle-compare="toggleComparison(repository)"
               :bookmarked="bookmarkIds.has(repository.id)"
               @toggle-bookmark="toggleBookmark(repository)"
             >
@@ -414,6 +424,20 @@ onUnmounted(() => window.clearTimeout(retryTimer))
       </template>
     </section>
   </main>
+
+  <aside v-if="comparison.length" class="comparison-tray" aria-label="比較候補">
+    <div class="shell comparison-tray-inner">
+      <div class="comparison-selection">
+        <strong aria-live="polite">比較候補 {{ comparison.length }} / 3</strong>
+        <button v-for="repository in comparison" :key="repository.id" type="button" class="selection-chip" :aria-label="`${repository.name}を比較から外す`" @click="toggleComparison(repository)">{{ repository.name }} <span aria-hidden="true">×</span></button>
+      </div>
+      <div class="toolbar-actions">
+        <button type="button" class="text-button" @click="clearComparison">選択をクリア</button>
+        <button type="button" class="search-submit" :disabled="!canCompare" @click="comparisonOpen = true">{{ canCompare ? '選択したOSSを比較' : 'あと1件選択' }}</button>
+      </div>
+    </div>
+  </aside>
+  <CompareDialog :open="comparisonOpen" :repositories="comparison" @close="comparisonOpen = false" />
 
   <footer class="shell footer">
     <span>GitHub OSS Radar</span>

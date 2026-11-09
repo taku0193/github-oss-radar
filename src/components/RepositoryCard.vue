@@ -9,8 +9,8 @@ import type { Repository } from '../github'
 import { translateToJapanese } from '../translation'
 import { languageColor } from '../languageColors'
 
-const props = defineProps<{ repository: Repository; bookmarked?: boolean; position?: number; dailyStars?: number }>()
-const emit = defineEmits<{ toggleBookmark: [] }>()
+const props = defineProps<{ repository: Repository; bookmarked?: boolean; position?: number; dailyStars?: number; compared?: boolean; compareDisabled?: boolean }>()
+const emit = defineEmits<{ toggleBookmark: []; toggleCompare: [] }>()
 const card = ref<HTMLElement>()
 const descriptionElement = ref<HTMLElement>()
 const descriptionExpanded = ref(false)
@@ -151,7 +151,13 @@ onUnmounted(() => {
     </div>
 
     <div class="repo-card-bottom">
-      <slot name="actions" />
+      <div class="repo-actions">
+        <slot name="actions" />
+        <button type="button" class="compare-toggle" :aria-pressed="Boolean(compared)" :disabled="compareDisabled && !compared" :aria-label="`${repository.owner}/${repository.name}を比較${compared ? 'から外す' : 'に追加'}`" @click="emit('toggleCompare')">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 4h7v16H3V4Zm11 0h7v16h-7V4Z" /></svg>
+          {{ compared ? '比較中' : '比較' }}
+        </button>
+      </div>
 
       <div class="repo-meta">
         <div class="repo-facts">

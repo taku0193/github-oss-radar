@@ -17,6 +17,15 @@ const item = {
 }
 
 describe('searchRepositories', () => {
+  it('includes detected licenses for comparison without inventing a license for missing data', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ items: [
+      { ...item, license: { spdx_id: 'MIT', name: 'MIT License' } },
+      { ...item, id: 43, license: { spdx_id: 'NOASSERTION', name: 'Other' } },
+      { ...item, id: 44, license: null },
+    ] }))
+    const result = await searchRepositories(fetcher, now)
+    expect(result.repositories.map(({ license }) => license)).toEqual(['MIT', null, null])
+  })
   it.each([
     ['today', '2026-11-06T15:00:00Z'],
     ['week', '2026-11-01T15:00:00Z'],
@@ -98,6 +107,7 @@ describe('searchRepositories', () => {
       createdAt: '2026-10-21T10:30:00Z',
       updatedAt: '2026-11-05T09:00:00Z',
       topics: [],
+      license: null,
     })
     expect(result.incomplete).toBe(false)
   })

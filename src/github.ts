@@ -18,6 +18,7 @@ export interface Repository {
   createdAt: string
   updatedAt: string
   topics?: string[]
+  license?: string | null
 }
 
 export interface SearchResult {
@@ -44,6 +45,7 @@ interface GitHubRepository {
   created_at: string
   updated_at: string
   topics?: string[]
+  license?: { spdx_id?: string | null } | null
 }
 
 interface GitHubSearchResponse {
@@ -137,6 +139,7 @@ export async function fetchRepositoryPage(
       createdAt: item.created_at,
       updatedAt: item.updated_at,
       topics: item.topics ?? [],
+      license: item.license?.spdx_id && item.license.spdx_id !== 'NOASSERTION' ? item.license.spdx_id : null,
     })),
     incomplete: body.incomplete_results === true,
     nextPage,
