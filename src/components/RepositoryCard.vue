@@ -12,6 +12,7 @@ import { languageColor } from '../languageColors'
 const props = defineProps<{ repository: Repository; bookmarked?: boolean; position?: number; dailyStars?: number; compared?: boolean; compareDisabled?: boolean }>()
 const emit = defineEmits<{ toggleBookmark: []; toggleCompare: [] }>()
 const card = ref<HTMLElement>()
+const cardVisible = ref(false)
 const descriptionElement = ref<HTMLElement>()
 const descriptionExpanded = ref(false)
 const descriptionOverflows = ref(false)
@@ -54,16 +55,17 @@ onMounted(() => {
     resizeObserver = new ResizeObserver(measureDescription)
     resizeObserver.observe(descriptionElement.value)
   }
-  if (!original.value) return
   if (!card.value || typeof IntersectionObserver === 'undefined') {
-    void loadTranslation()
+    cardVisible.value = true
+    if (original.value) void loadTranslation()
     return
   }
 
   observer = new IntersectionObserver((entries) => {
     if (!entries.some((entry) => entry.isIntersecting)) return
+    cardVisible.value = true
     observer?.disconnect()
-    void loadTranslation()
+    if (original.value) void loadTranslation()
   })
   observer.observe(card.value)
 })
@@ -76,7 +78,12 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <article ref="card" class="repo-card" :style="{ '--repo-accent': languageColor(repository.language) }">
+  <article
+    ref="card"
+    class="repo-card"
+    :class="{ 'repo-card--waiting': !cardVisible, 'repo-card--entered': cardVisible }"
+    :style="{ '--repo-accent': languageColor(repository.language), '--reveal-delay': `${((position ?? 1) - 1) % 3 * 45}ms` }"
+  >
     <div class="repo-card-top">
       <div class="repo-identity">
         <span class="repo-avatar" aria-hidden="true">
