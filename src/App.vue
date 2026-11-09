@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { readBookmarks, setBookmarked } from './bookmarks'
 import RepositoryCard from './components/RepositoryCard.vue'
 import RankingSelector from './components/RankingSelector.vue'
 import CompareDialog from './components/CompareDialog.vue'
+import SearchTools from './components/SearchTools.vue'
+import { initialSearch, parseSearchURL, rememberSearch, searchURL } from './searchPreferences'
 import { useComparison } from './comparison'
 import {
   fetchRepositoryPage,
@@ -14,6 +16,7 @@ import {
   searchRepositories,
   type Repository,
   type SearchResult,
+  type SearchFilters,
 } from './github'
 import { recommendRepositories } from './recommendations'
 import { useBrowseNavigation } from './useBrowseNavigation'
@@ -43,7 +46,9 @@ const bookmarkError = ref('')
 const { repositories: comparison, ids: comparisonIds, full: comparisonFull, canCompare, toggle: toggleComparison, clear: clearComparison } = useComparison()
 const comparisonOpen = ref(false)
 const { keyword, language, activeFilters, ranking, hasAppliedFilters, hasDraftChanges,
-  applyDraft, selectRanking, removeCondition } = useSearchFilters()
+  applyDraft, selectRanking, removeCondition, restoreFilters } = useSearchFilters()
+const searchMemoryError = ref('')
+let pendingNavigation: SearchFilters | undefined
 const languages = ['JavaScript', 'TypeScript', 'Python', 'Rust', 'Go', 'Ruby', 'Java', 'C', 'C++', 'C#', 'Dart', 'Kotlin', 'Swift', 'PHP', 'Shell', 'HTML', 'CSS', 'Vue']
 const rankingInfo = computed(() => rankingOptions.find(({ value }) => value === ranking.value)!)
 const rankingReference = shallowRef(new Date())
@@ -81,8 +86,14 @@ function requestErrorText(failure: RequestFailure, fallback: string) {
   return fallback
 }
 
-async function loadRepositories() {
+async function loadRepositories(updateHistory = true) {
   if (requestBlocked.value) return
+  try {
+    const url = searchURL(window.location.href, activeFilters.value)
+    if (updateHistory && url !== window.location.href) window.history.pushState(null, '', url)
+    rememberSearch(window.localStorage, activeFilters.value)
+    searchMemoryError.value = ''
+  } catch { searchMemoryError.value = '検索条件をブラウザに記憶できませんでした。検索は引き続き利用できます。' }
   activeRequest.value = 'search'
   moreFailure.value = undefined
   visibleLimit.value = SEARCH_PAGE_SIZE
@@ -181,15 +192,40 @@ function showView(saved: boolean) {
   recommendation.value = undefined
 }
 
+function applySavedSearch(filters: SearchFilters, updateHistory = true) {
+  if (requestBlocked.value) return
+  restoreFilters(filters)
+  showView(false)
+  return loadRepositories(updateHistory)
+}
+
+function restoreHistory() {
+  const filters = parseSearchURL(window.location.href)
+  if (requestBlocked.value) pendingNavigation = filters
+  else void applySavedSearch(filters, false)
+}
+
+watch(requestBlocked, (blocked) => {
+  if (!blocked && pendingNavigation) {
+    const filters = pendingNavigation
+    pendingNavigation = undefined
+    void applySavedSearch(filters, false)
+  }
+})
+
 onMounted(() => {
+  try { restoreFilters(initialSearch(window.location.href, window.localStorage)) }
+  catch { restoreFilters(parseSearchURL(window.location.href)) }
+  window.history.replaceState(null, '', searchURL(window.location.href, activeFilters.value))
+  window.addEventListener('popstate', restoreHistory)
   try {
     bookmarks.value = readBookmarks(window.localStorage)
   } catch {
     bookmarkError.value = '保存済みリポジトリを読み込めませんでした。'
   }
-  void loadRepositories()
+  void loadRepositories(false)
 })
-onUnmounted(() => window.clearTimeout(retryTimer))
+onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener('popstate', restoreHistory) })
 </script>
 
 <template>
@@ -300,11 +336,17 @@ onUnmounted(() => window.clearTimeout(retryTimer))
           言語
           <select v-model="language">
             <option value="">すべて</option>
+            <option v-if="language && !languages.includes(language)" :value="language">{{ language }}</option>
             <option v-for="option in languages" :key="option" :value="option">{{ option }}</option>
           </select>
         </label>
         <button type="submit" class="search-submit" :disabled="requestBlocked">検索</button>
       </form>
+    </div>
+
+    <div v-show="view === 'search'">
+      <SearchTools :filters="activeFilters" :disabled="requestBlocked" @apply="applySavedSearch" />
+      <p v-if="searchMemoryError" class="utility-message" role="status">{{ searchMemoryError }}</p>
     </div>
 
     <div v-show="view === 'search'" class="ranking-toolbar">

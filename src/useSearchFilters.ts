@@ -19,11 +19,17 @@ export function useSearchFilters() {
     activeFilters.value = { ...activeFilters.value, ranking: value }
   }
 
+  function restoreFilters(filters: SearchFilters) {
+    activeFilters.value = { ...filters, ranking: filters.ranking ?? 'rising' }
+    keyword.value = filters.keyword ?? ''
+    language.value = filters.language ?? ''
+  }
+
   function removeCondition(condition: 'keyword' | 'language' | 'all') {
     keyword.value = condition === 'keyword' || condition === 'all' ? '' : activeFilters.value.keyword ?? ''
     language.value = condition === 'language' || condition === 'all' ? '' : activeFilters.value.language ?? ''
     applyDraft()
   }
 
-  return { keyword, language, activeFilters, ranking, hasAppliedFilters, hasDraftChanges, applyDraft, selectRanking, removeCondition }
+  return { keyword, language, activeFilters, ranking, hasAppliedFilters, hasDraftChanges, applyDraft, selectRanking, removeCondition, restoreFilters }
 }
