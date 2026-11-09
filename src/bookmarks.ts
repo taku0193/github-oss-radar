@@ -30,7 +30,14 @@ export function readBookmarks(storage: Pick<Storage, 'getItem'>): Repository[] {
 
   const repositories = new Map<number, Repository>()
   for (const item of items) {
-    if (isRepository(item)) repositories.set(item.id, item)
+    if (!isRepository(item)) continue
+    const repository = { ...item }
+    if ('topics' in item) {
+      repository.topics = Array.isArray(item.topics)
+        ? item.topics.filter((topic) => typeof topic === 'string') : []
+    }
+    if ('license' in item) repository.license = typeof item.license === 'string' ? item.license : null
+    repositories.set(repository.id, repository)
   }
   return [...repositories.values()]
 }

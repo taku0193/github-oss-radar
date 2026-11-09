@@ -51,6 +51,16 @@ describe('bookmarks', () => {
     expect(readBookmarks({ getItem: () => '{' })).toEqual([])
   })
 
+  it('preserves valid optional metadata while ignoring invalid topic entries', () => {
+    const storage = { getItem: () => JSON.stringify([{ ...repository,
+      topics: ['cli', null, 42, 'developer-tools'], license: 'MIT',
+    }]) }
+
+    expect(readBookmarks(storage)).toEqual([{ ...repository,
+      topics: ['cli', 'developer-tools'], license: 'MIT',
+    }])
+  })
+
   it('reports write failures and leaves the saved list intact', () => {
     const storage = memoryStorage()
     setBookmarked(storage, repository, true)
