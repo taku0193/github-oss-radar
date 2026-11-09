@@ -538,6 +538,17 @@ button:disabled { opacity: 0.6; cursor: default; }
 .custom-topic-form { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; margin-block: 16px 8px; }
 .custom-topic-form label { display: grid; flex: 1; min-width: 10rem; gap: 4px; font-size: var(--text-xs); color: var(--fg-2); }
 .custom-topic-form input { width: 100%; min-height: 38px; padding: 6px 10px; border: 1px solid var(--control-line); border-radius: var(--radius-sm); font: inherit; }
+.bookmark-annotation { display: grid; gap: 6px; }
+.bookmark-annotation > .utility-button { justify-self: start; }
+.bookmark-tags, .tag-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.bookmark-tags span, .tag-presets button { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--fg-2); font-size: var(--text-xs); padding: 3px 8px; }
+.bookmark-note { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--fg-2); font-size: var(--text-sm); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.bookmark-editor { display: grid; gap: var(--space-3); padding-top: 8px; }
+.bookmark-editor label, .saved-tag-filter { display: grid; gap: 4px; color: var(--fg-2); font-size: var(--text-xs); }
+.bookmark-editor textarea, .bookmark-editor input, .saved-tag-filter select { min-width: 0; width: 100%; border: 1px solid var(--control-line); border-radius: var(--radius-sm); padding: 8px; font: inherit; color: var(--fg); background: var(--surface); }
+.bookmark-editor textarea { resize: vertical; }
+.bookmark-editor > .refresh-button { justify-self: start; }
+.bookmark-notice { margin-bottom: var(--space-4); }
 
 @media (max-width: 980px) {
   .shell { width: calc(100% - 2 * var(--container-gutter-tablet)); }

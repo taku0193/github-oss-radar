@@ -6,6 +6,8 @@ import RankingSelector from './components/RankingSelector.vue'
 import CompareDialog from './components/CompareDialog.vue'
 import SearchTools from './components/SearchTools.vue'
 import TopicFilter from './components/TopicFilter.vue'
+import BookmarkNotes from './components/BookmarkNotes.vue'
+import { readBookmarkNotes, writeBookmarkNote, type BookmarkNote } from './bookmarkNotes'
 import { initialSearch, parseSearchURL, rememberSearch, searchURL } from './searchPreferences'
 import { useComparison } from './comparison'
 import {
@@ -41,6 +43,13 @@ const recommendation = shallowRef<RecommendationState>()
 const moreFailure = shallowRef<RequestFailure>()
 const activeRequest = ref<'search' | 'more' | 'recommendations' | null>(null)
 const bookmarks = shallowRef<Repository[]>([])
+const bookmarkNotes = shallowRef<Record<number, BookmarkNote>>({})
+const selectedBookmarkTag = ref('')
+const bookmarkTags = computed(() => [...new Set(bookmarks.value.flatMap(({ id }) => bookmarkNotes.value[id]?.tags ?? []))].sort((a, b) => a.localeCompare(b, 'ja')))
+const visibleBookmarks = computed(() => selectedBookmarkTag.value
+  ? bookmarks.value.filter(({ id }) => bookmarkNotes.value[id]?.tags.includes(selectedBookmarkTag.value)) : bookmarks.value)
+const bookmarkNotice = ref('')
+watch(bookmarkTags, (tags) => { if (selectedBookmarkTag.value && !tags.includes(selectedBookmarkTag.value)) selectedBookmarkTag.value = '' })
 const bookmarkIds = computed(() => new Set(bookmarks.value.map(({ id }) => id)))
 const { view, recommendationOrigin, show, openRecommendations, backFromRecommendations, resetSearchPosition } = useBrowseNavigation()
 const bookmarkError = ref('')
@@ -194,6 +203,14 @@ function toggleBookmark(repository: Repository) {
   }
 }
 
+function saveBookmarkNote(repository: Repository, note: string, tags: string) {
+  try {
+    bookmarkNotes.value = writeBookmarkNote(window.localStorage, repository.id, note, tags)
+    bookmarkError.value = ''
+    bookmarkNotice.value = `「${repository.name}」のメモ・タグを保存しました。`
+  } catch (error) { bookmarkError.value = error instanceof Error ? error.message : 'メモを保存できませんでした。' }
+}
+
 function showView(saved: boolean) {
   void show(saved ? 'saved' : 'search')
   recommendation.value = undefined
@@ -227,6 +244,7 @@ onMounted(() => {
   window.addEventListener('popstate', restoreHistory)
   try {
     bookmarks.value = readBookmarks(window.localStorage)
+    bookmarkNotes.value = readBookmarkNotes(window.localStorage)
   } catch {
     bookmarkError.value = '保存済みリポジトリを読み込めませんでした。'
   }
@@ -303,12 +321,15 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
       <div class="results-header">
         <div>
           <h1 id="saved-title" class="saved-title">保存済みリポジトリ</h1>
-          <p class="results-caption" aria-live="polite">{{ bookmarks.length }} 件を保存</p>
+          <p class="results-caption" aria-live="polite">{{ visibleBookmarks.length }} 件を表示 / {{ bookmarks.length }} 件を保存</p>
         </div>
+        <label v-if="bookmarkTags.length" class="saved-tag-filter">タグで絞り込み<select v-model="selectedBookmarkTag"><option value="">すべてのタグ</option><option v-for="tag in bookmarkTags" :key="tag" :value="tag">{{ tag }}</option></select></label>
       </div>
-      <ul v-if="bookmarks.length" class="repository-grid" role="list" aria-label="保存済みリポジトリ">
-        <li v-for="repository in bookmarks" :key="repository.id" :data-reading-id="`saved-${repository.id}`">
+      <p v-if="bookmarkNotice" class="utility-message bookmark-notice" role="status">{{ bookmarkNotice }}</p>
+      <ul v-if="visibleBookmarks.length" class="repository-grid" role="list" aria-label="保存済みリポジトリ">
+        <li v-for="repository in visibleBookmarks" :key="repository.id" :data-reading-id="`saved-${repository.id}`">
           <RepositoryCard :repository="repository" bookmarked :compared="comparisonIds.has(repository.id)" :compare-disabled="comparisonFull" @toggle-compare="toggleComparison(repository)" @toggle-bookmark="toggleBookmark(repository)">
+            <template #notes><BookmarkNotes :name="repository.name" :annotation="bookmarkNotes[repository.id]" @save="(note, tags) => saveBookmarkNote(repository, note, tags)" /></template>
             <template #actions>
               <button type="button" class="similar-button" :disabled="requestBlocked" @click="loadRecommendations(repository)">似たリポジトリを探す <span aria-hidden="true">→</span></button>
             </template>
@@ -316,7 +337,7 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
         </li>
       </ul>
       <div v-else class="state-panel">
-        <p>保存済みのリポジトリはありません</p>
+        <p>{{ selectedBookmarkTag ? 'このタグのリポジトリはありません' : '保存済みのリポジトリはありません' }}</p>
         <span>一覧で気になったカードの「保存」を押すと、ここから見返せます。</span>
       </div>
     </section>

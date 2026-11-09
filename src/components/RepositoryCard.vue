@@ -150,6 +150,8 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <slot name="notes" />
+
     <div class="repo-card-bottom">
       <div class="repo-actions">
         <slot name="actions" />
