@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" role="img" aria-labelledby="title description">
+  <title id="title">GitHub OSS Radar</title>
+  <desc id="description">Discover. Compare. Make it yours.</desc>
+  <rect width="1280" height="320" rx="16" fill="#f3f5f3"/>
+  <path d="M56 266h1168" stroke="#d9e0da"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="56" y="60" font-size="15" font-weight="700" letter-spacing="3" fill="#285d47">GITHUB OSS RADAR</text>
+    <text x="52" y="144" font-size="65" font-weight="700" letter-spacing="-3" fill="#181b20">Discover. Compare.</text>
+    <text x="52" y="219" font-size="65" font-weight="700" letter-spacing="-3" fill="#285d47">Make it yours.</text>
+    <text x="56" y="296" font-size="13" letter-spacing="2" fill="#646d79">OPEN SOURCE DISCOVERY, RIGHT IN YOUR BROWSER.</text>
+    <text x="1224" y="296" text-anchor="end" font-size="13" font-weight="700" letter-spacing="2" fill="#285d47">100+ STARS</text>
+  </g>
+  <g transform="translate(1075 145)" fill="none" stroke="#285d47">
+    <circle r="96" stroke-opacity=".18"/><circle r="64" stroke-opacity=".25"/><circle r="32" stroke-opacity=".45"/>
+    <path d="M-108 0h216M0-108v216" stroke-opacity=".12"/><path d="M0 0 68-68" stroke-width="3"/>
+    <circle r="6" fill="#285d47" stroke="none"/><circle cx="-49" cy="40" r="5" fill="#285d47" stroke="none"/><circle cx="33" cy="15" r="4" fill="#b8913c" stroke="none"/>
+  </g>
+</svg>
