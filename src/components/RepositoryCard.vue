@@ -122,13 +122,31 @@ onUnmounted(() => {
         type="button"
         class="repo-bookmark"
         :aria-label="`${repository.owner}/${repository.name}の${bookmarked ? '保存を解除' : '保存'}`"
+        :title="bookmarked ? '保存を解除' : '保存'"
         :aria-pressed="Boolean(bookmarked)"
         :class="{ 'repo-bookmark--saved': bookmarked }"
         @click="emit('toggleBookmark')"
       >
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4h12v16l-6-4-6 4V4Z" /></svg>
-        {{ bookmarked ? '保存済み' : '保存' }}
+        <span class="visually-hidden">{{ bookmarked ? '保存済み' : '保存' }}</span>
       </button>
+    </div>
+
+    <div class="repo-facts">
+      <span v-if="position" class="repo-position"><span class="visually-hidden">順位 </span>{{ position }}位</span>
+      <span
+        class="repo-language"
+        :class="{ 'repo-missing': !repository.language }"
+        :style="{ '--language-color': languageColor(repository.language) }"
+      >
+        {{ repository.language || '言語未設定' }}
+      </span>
+      <span class="repo-stars">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="m12 3 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3-4.6-4.5 6.3-.9L12 3Z" />
+        </svg>
+        <span class="visually-hidden">スター数 </span>{{ numberFormat.format(repository.stars) }}
+      </span>
     </div>
 
     <div>
@@ -170,22 +188,6 @@ onUnmounted(() => {
       </div>
 
       <div class="repo-meta">
-        <div class="repo-facts">
-          <span v-if="position" class="repo-position"><span class="visually-hidden">順位 </span>{{ position }}位</span>
-          <span
-            class="repo-language"
-            :class="{ 'repo-missing': !repository.language }"
-            :style="{ '--language-color': languageColor(repository.language) }"
-          >
-            {{ repository.language || '言語未設定' }}
-          </span>
-          <span class="repo-stars">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="m12 3 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3-4.6-4.5 6.3-.9L12 3Z" />
-            </svg>
-            <span class="visually-hidden">スター数 </span>{{ numberFormat.format(repository.stars) }}
-          </span>
-        </div>
         <p v-if="dailyStars !== undefined" class="repo-growth">公開後平均 {{ numberFormat.format(Math.round(dailyStars)) }} スター / 日</p>
         <dl class="repo-dates">
           <div>

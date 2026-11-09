@@ -2,6 +2,8 @@
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { readBookmarks, setBookmarked } from './bookmarks'
 import RepositoryCard from './components/RepositoryCard.vue'
+import RepositorySkeleton from './components/RepositorySkeleton.vue'
+import DiscoverySignal from './components/DiscoverySignal.vue'
 import RankingSelector from './components/RankingSelector.vue'
 import CompareDialog from './components/CompareDialog.vue'
 import SearchTools from './components/SearchTools.vue'
@@ -268,28 +270,22 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
             <circle cx="14" cy="14" r="1" fill="currentColor" />
           </svg>
         </span>
-        <span class="brand-text"><span class="brand-kicker">GITHUB</span><strong class="brand-wordmark">OSS Radar<span>.</span></strong></span>
+        <span class="brand-text"><strong class="brand-wordmark">OSS Radar</strong></span>
       </div>
-      <span class="sidebar-caption">ワークスペース</span>
       <nav class="view-nav" aria-label="画面切り替え">
         <button type="button" :aria-current="(view === 'search' || view === 'recommendations' && recommendationOrigin === 'search') ? 'page' : undefined" @click="showView(false)">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></svg><span>探す</span><span class="nav-arrow" aria-hidden="true">↗</span>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></svg><span>探す</span>
         </button>
         <button type="button" :aria-current="(view === 'saved' || view === 'recommendations' && recommendationOrigin === 'saved') ? 'page' : undefined" @click="showView(true)">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4h12v16l-6-4-6 4V4Z"/></svg><span>保存済み</span> <span class="nav-count">{{ bookmarks.length }}</span>
         </button>
       </nav>
+      <div class="header-threshold"><span aria-hidden="true">★</span>{{ SEARCH_MIN_STARS }}スター以上の公開OSS</div>
     </div>
-    <div class="sidebar-bottom">
-      <svg class="sidebar-radar" viewBox="0 0 128 128" fill="none" aria-hidden="true"><circle cx="64" cy="64" r="52"/><circle cx="64" cy="64" r="34"/><circle cx="64" cy="64" r="16"/><path d="M64 7v114M7 64h114M64 64l37-37"/><circle cx="64" cy="64" r="4"/><circle cx="32" cy="88" r="3"/></svg>
-      <p class="sidebar-statement">次の道具を、<br />ここから。</p>
-      <p class="sidebar-footnote"><span aria-hidden="true">✦</span> {{ SEARCH_MIN_STARS }}スター以上の公開OSS</p>
-    </div>
-    <p v-if="bookmarkError" class="bookmark-error" role="alert">{{ bookmarkError }}</p>
+    <p v-if="bookmarkError" class="shell bookmark-error" role="alert">{{ bookmarkError }}</p>
   </header>
 
   <div class="workspace">
-  <div class="workspace-topline"><p>ワークスペース <span aria-hidden="true">/</span> <strong>{{ view === 'saved' ? '保存したOSS' : view === 'recommendations' ? '関連するOSS' : 'ディスカバリー' }}</strong></p><span class="workspace-source">GitHubの公開データ</span></div>
   <main class="shell dashboard" :class="[`dashboard--${view}`, { 'dashboard--with-tray': comparison.length }]">
     <section v-if="recommendation" v-show="view === 'recommendations'" class="collection collection--recommendations" aria-labelledby="recommendation-title">
       <div class="results-header">
@@ -302,10 +298,7 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
           {{ recommendationOrigin === 'search' ? '検索結果に戻る' : '保存済みに戻る' }}
         </button>
       </div>
-      <div v-if="recommendation.status === 'loading'" class="state-panel" role="status">
-        <span class="spinner" aria-hidden="true"></span>
-        <p>似たリポジトリを探しています…</p>
-      </div>
+      <RepositorySkeleton v-if="recommendation.status === 'loading'" :count="3" message="似たリポジトリを探しています…" />
       <div v-else-if="recommendation.status === 'ready'">
         <p v-if="recommendation.incomplete" class="partial-note" role="status">GitHub から一部の結果のみ返されました。</p>
         <ul v-if="recommendation.repositories.length" class="repository-grid" role="list" aria-label="推薦リポジトリ">
@@ -358,32 +351,34 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
     <div v-show="view === 'search'" class="discovery-header">
       <section class="hero" aria-labelledby="page-title">
         <div class="hero-content">
-          <p class="hero-eyebrow">THE OPEN SOURCE INDEX</p>
-          <h1 id="page-title">OSSを見つける</h1>
-          <p class="hero-description">気になる道具を、あなたの目録へ。</p>
+          <div class="hero-copy">
+            <h1 id="page-title">次に使うOSSを<wbr>見つける</h1>
+            <p class="hero-description">キーワードや用途から探して、気になるプロジェクトを保存。</p>
+          </div>
+          <DiscoverySignal />
         </div>
       </section>
 
-      <form class="search-form" role="search" aria-label="リポジトリ検索" @submit.prevent="submitSearch">
+      <form class="search-form" :class="{ 'search-form--busy': activeRequest === 'search' }" role="search" aria-label="リポジトリ検索" @submit.prevent="submitSearch">
         <label class="keyword-field">
-          キーワード
+          <span class="visually-hidden">キーワード</span>
           <span class="search-input">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <circle cx="10.5" cy="10.5" r="5.5" />
               <path d="m15 15 4 4" />
             </svg>
-            <input v-model="keyword" type="search" placeholder="例 markdown" :maxlength="SEARCH_KEYWORD_LIMIT" />
+            <input v-model="keyword" type="search" placeholder="リポジトリ名、キーワードで検索…" :maxlength="SEARCH_KEYWORD_LIMIT" />
           </span>
         </label>
         <label>
-          言語
+          <span class="visually-hidden">言語</span>
           <select v-model="language">
-            <option value="">すべて</option>
+            <option value="">すべての言語</option>
             <option v-if="language && !languages.includes(language)" :value="language">{{ language }}</option>
             <option v-for="option in languages" :key="option" :value="option">{{ option }}</option>
           </select>
         </label>
-        <button type="submit" class="search-submit" :disabled="requestBlocked">検索</button>
+        <button type="submit" class="search-submit" :disabled="requestBlocked">{{ activeRequest === 'search' ? '検索中' : '検索' }} <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" /></svg></button>
       </form>
     </div>
 
@@ -450,10 +445,7 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
       </div>
       <p v-if="hasDraftChanges" class="draft-note" role="status">条件を変更しています。「検索」で結果を更新できます。</p>
 
-      <div v-if="state.status === 'loading'" class="state-panel" role="status">
-        <span class="spinner" aria-hidden="true"></span>
-        <p>GitHub からリポジトリを取得中…</p>
-      </div>
+      <RepositorySkeleton v-if="state.status === 'loading'" />
       <div v-else-if="state.status === 'rate-limit'" class="state-panel state-warning" role="alert">
         <p>GitHub API の利用上限に達しました</p>
         <span v-if="retryBlocked">{{ retryTimeFormat.format(state.retryAt) }} 以降に再取得できます。</span>

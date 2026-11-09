@@ -46,9 +46,9 @@ onMounted(() => {
   <div class="search-tools">
     <div class="toolbar-actions">
       <slot name="filters" />
-      <button type="button" class="utility-button" :aria-expanded="panel === 'save'" :disabled="disabled" @click="openSave">条件を保存</button>
-      <button type="button" class="utility-button" :aria-expanded="panel === 'list'" :disabled="disabled" @click="panel = panel === 'list' ? null : 'list'">保存した条件 <span class="nav-count">{{ saved.length }}</span></button>
-      <button type="button" class="utility-button" @click="share">URLをコピー <span aria-hidden="true">↗</span></button>
+      <button type="button" class="utility-button" :aria-expanded="panel === 'save'" :disabled="disabled" @click="openSave"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4h12v16l-6-4-6 4V4Z" /></svg>条件を保存</button>
+      <button type="button" class="utility-button" :aria-expanded="panel === 'list'" :disabled="disabled" @click="panel = panel === 'list' ? null : 'list'"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 6h7l2 2h9v12H3V6ZM3 11h18" /></svg>保存した条件 <span class="nav-count">{{ saved.length }}</span></button>
+      <button type="button" class="utility-button" @click="share"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 15 6-6m-8 4-2 2a4 4 0 0 0 6 6l3-3m-4-12 3-3a4 4 0 0 1 6 6l-2 2" /></svg>URLをコピー</button>
     </div>
     <Transition name="panel" mode="out-in">
     <form v-if="panel === 'save'" class="search-panel save-search-form" :inert="panel !== 'save'" @submit.prevent="save">

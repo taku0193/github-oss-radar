@@ -13,7 +13,7 @@ function choose(topic: string) { emit('change', normalizeTopic(topic)); open.val
 
 <template>
   <div class="topic-picker">
-    <button type="button" class="utility-button" :disabled="disabled" :aria-expanded="open" @click="open = !open">用途・トピック<span v-if="value" class="active-topic">{{ label }}</span><span aria-hidden="true">⌄</span></button>
+    <button type="button" class="utility-button" :disabled="disabled" :aria-expanded="open" @click="open = !open"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16l-6 7v6l-4 2v-8L4 5Z" /></svg>用途・トピック<span v-if="value" class="active-topic">{{ label }}</span><span aria-hidden="true">⌄</span></button>
     <Transition name="panel">
     <div v-if="open" class="topic-panel search-panel" :inert="!open">
       <div class="results-header"><strong>何に使いたいですか？</strong><button type="button" class="text-button" @click="open = false">閉じる</button></div>
