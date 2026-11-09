@@ -1,3 +1,5 @@
+import { rankingSince, RISING_CANDIDATE_LIMIT, sortRising, type RankingMode } from './rankings'
+
 export const SEARCH_WINDOW_DAYS = 30
 export const SEARCH_PAGE_SIZE = 24
 export const SEARCH_MIN_STARS = 100
@@ -28,6 +30,7 @@ export interface SearchFilters {
   keyword?: string
   language?: string
   topic?: string
+  ranking?: RankingMode
 }
 
 interface GitHubRepository {
@@ -66,8 +69,11 @@ export async function searchRepositories(
   now?: Date,
   filters: SearchFilters = {},
 ): Promise<SearchResult> {
-  const cutoff = new Date((now?.getTime() ?? Date.now()) - SEARCH_WINDOW_DAYS * 86_400_000)
-  const since = cutoff.toISOString().replace(/\.\d{3}Z$/, 'Z')
+  const reference = now ?? new Date()
+  const cutoff = filters.ranking
+    ? rankingSince(filters.ranking, reference)
+    : new Date(reference.getTime() - SEARCH_WINDOW_DAYS * 86_400_000)
+  const since = cutoff?.toISOString().replace(/\.\d{3}Z$/, 'Z')
   const terms = filters.keyword?.slice(0, SEARCH_KEYWORD_LIMIT).match(/[^\s:"\\]+/g) ?? []
   const language = filters.language?.replace(/["\\]/g, '').trim()
   const query = [
@@ -75,7 +81,7 @@ export async function searchRepositories(
     terms.length && 'in:name,description',
     language && `language:"${language}"`,
     filters.topic && `topic:${filters.topic}`,
-    `created:>=${since}`,
+    since && `created:>=${since}`,
     `stars:>=${SEARCH_MIN_STARS}`,
     'is:public',
     'fork:false',
@@ -83,10 +89,14 @@ export async function searchRepositories(
   const url = new URL('https://api.github.com/search/repositories')
   url.search = new URLSearchParams({
     q: query,
-    per_page: String(SEARCH_PAGE_SIZE),
+    per_page: String(filters.ranking === 'rising' ? RISING_CANDIDATE_LIMIT : SEARCH_PAGE_SIZE),
+    ...(filters.ranking ? { sort: 'stars', order: 'desc' } : {}),
   }).toString()
 
-  return fetchRepositoryPage(url, fetcher, now)
+  const result = await fetchRepositoryPage(url, fetcher, reference)
+  return filters.ranking === 'rising'
+    ? { ...result, repositories: sortRising(result.repositories, reference), nextPage: null }
+    : result
 }
 
 export async function fetchRepositoryPage(

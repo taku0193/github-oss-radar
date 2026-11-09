@@ -17,6 +17,54 @@ const item = {
 }
 
 describe('searchRepositories', () => {
+  it.each([
+    ['today', '2026-11-06T15:00:00Z'],
+    ['week', '2026-11-01T15:00:00Z'],
+    ['month', '2026-10-31T15:00:00Z'],
+  ] as const)('filters %s by creation date in Japan and sorts by stars', async (ranking, cutoff) => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ items: [item] }))
+
+    await searchRepositories(fetcher, now, { ranking, keyword: 'editor', language: 'Rust' })
+
+    const url = new URL(String(fetcher.mock.calls[0]![0]))
+    expect(url.searchParams.get('q')).toContain(`created:>=${cutoff}`)
+    expect(url.searchParams.get('q')).toContain('"editor" in:name,description language:"Rust"')
+    expect(url.searchParams.get('q')).toContain('stars:>=100 is:public fork:false')
+    expect(url.searchParams.get('sort')).toBe('stars')
+    expect(url.searchParams.get('order')).toBe('desc')
+  })
+
+  it('searches all-time rankings without the previous 30-day creation restriction', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ items: [item], total_count: 100 }))
+
+    const result = await searchRepositories(fetcher, now, { ranking: 'all' })
+
+    const url = new URL(String(fetcher.mock.calls[0]![0]))
+    expect(url.searchParams.get('q')).not.toContain('created:')
+    expect(url.searchParams.get('sort')).toBe('stars')
+    expect(result.nextPage?.searchParams.get('sort')).toBe('stars')
+    expect(result.nextPage?.searchParams.get('order')).toBe('desc')
+    expect(result.nextPage?.searchParams.get('page')).toBe('2')
+  })
+
+  it('fetches rising candidates once and sorts the whole set by average daily stars', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({
+      items: [
+        { ...item, id: 1, stargazers_count: 900, created_at: '2026-10-28T15:30:00Z' },
+        { ...item, id: 2, stargazers_count: 400, created_at: '2026-11-05T15:30:00Z' },
+      ], total_count: 500,
+    }))
+
+    const result = await searchRepositories(fetcher, now, { ranking: 'rising' })
+
+    const url = new URL(String(fetcher.mock.calls[0]![0]))
+    expect(url.searchParams.get('q')).toContain('created:>=2026-10-07T15:30:00Z')
+    expect(url.searchParams.get('per_page')).toBe('100')
+    expect(result.repositories.map(({ id }) => id)).toEqual([2, 1])
+    expect(result.nextPage).toBeNull()
+    expect(fetcher).toHaveBeenCalledTimes(1)
+  })
+
   it('requests recent public non-forks with at least 100 stars in GitHub search order', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({
