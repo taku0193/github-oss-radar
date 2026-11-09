@@ -2,20 +2,22 @@
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { readBookmarks, setBookmarked } from './bookmarks'
 import RepositoryCard from './components/RepositoryCard.vue'
+import RankingSelector from './components/RankingSelector.vue'
 import {
   fetchRepositoryPage,
   GitHubSearchError,
   SEARCH_KEYWORD_LIMIT,
   SEARCH_MIN_STARS,
   SEARCH_PAGE_SIZE,
-  SEARCH_WINDOW_DAYS,
   searchRepositories,
   type Repository,
-  type SearchFilters,
   type SearchResult,
 } from './github'
 import { recommendRepositories } from './recommendations'
 import { useBrowseNavigation } from './useBrowseNavigation'
+import { useSearchFilters } from './useSearchFilters'
+import { rankingOptions, risingScore, type RankingMode } from './rankings'
+import { languageColor } from './languageColors'
 
 type RequestFailure =
   | { status: 'error' }
@@ -36,9 +38,18 @@ const bookmarks = shallowRef<Repository[]>([])
 const bookmarkIds = computed(() => new Set(bookmarks.value.map(({ id }) => id)))
 const { view, recommendationOrigin, show, openRecommendations, backFromRecommendations, resetSearchPosition } = useBrowseNavigation()
 const bookmarkError = ref('')
-const keyword = ref('')
-const language = ref('')
-const languages = ['JavaScript', 'TypeScript', 'Python', 'Rust', 'Go', 'Ruby', 'Java', 'C++', 'C#']
+const { keyword, language, activeFilters, ranking, hasAppliedFilters, hasDraftChanges,
+  applyDraft, selectRanking, removeCondition } = useSearchFilters()
+const languages = ['JavaScript', 'TypeScript', 'Python', 'Rust', 'Go', 'Ruby', 'Java', 'C', 'C++', 'C#', 'Dart', 'Kotlin', 'Swift', 'PHP', 'Shell', 'HTML', 'CSS', 'Vue']
+const rankingInfo = computed(() => rankingOptions.find(({ value }) => value === ranking.value)!)
+const rankingReference = shallowRef(new Date())
+const visibleLimit = ref(SEARCH_PAGE_SIZE)
+const visibleRepositories = computed(() => state.value.status === 'ready'
+  ? state.value.repositories.slice(0, visibleLimit.value) : [])
+const hasMore = computed(() => state.value.status === 'ready'
+  && (state.value.nextPage !== null || visibleLimit.value < state.value.repositories.length))
+const broaderRanking = computed(() => ranking.value === 'all' ? null
+  : ranking.value === 'today' || ranking.value === 'week' ? 'month' : 'all')
 const retryBlocked = ref(false)
 const requestBlocked = computed(() => activeRequest.value !== null || retryBlocked.value)
 const retryTimeFormat = new Intl.DateTimeFormat('ja-JP', {
@@ -46,10 +57,6 @@ const retryTimeFormat = new Intl.DateTimeFormat('ja-JP', {
   timeStyle: 'medium',
 })
 let retryTimer: number | undefined
-const activeFilters = shallowRef<SearchFilters>({})
-const hasAppliedFilters = computed(() => Boolean(activeFilters.value.keyword || activeFilters.value.language))
-const hasDraftChanges = computed(() => keyword.value.trim() !== (activeFilters.value.keyword ?? '')
-  || language.value !== (activeFilters.value.language ?? ''))
 
 function requestFailure(error: unknown): RequestFailure {
   if (!(error instanceof GitHubSearchError) || error.kind !== 'rate-limit') return { status: 'error' }
@@ -74,11 +81,13 @@ async function loadRepositories() {
   if (requestBlocked.value) return
   activeRequest.value = 'search'
   moreFailure.value = undefined
+  visibleLimit.value = SEARCH_PAGE_SIZE
+  rankingReference.value = new Date()
   resetSearchPosition()
   state.value = { status: 'loading' }
 
   try {
-    const result = await searchRepositories(undefined, undefined, activeFilters.value)
+    const result = await searchRepositories(undefined, rankingReference.value, activeFilters.value)
     state.value = { status: 'ready', ...result }
   } catch (error) {
     state.value = requestFailure(error)
@@ -89,20 +98,30 @@ async function loadRepositories() {
 
 function submitSearch() {
   if (requestBlocked.value) return
-  activeFilters.value = { keyword: keyword.value.trim(), language: language.value }
+  applyDraft()
+  return loadRepositories()
+}
+
+function changeRanking(value: RankingMode) {
+  if (requestBlocked.value || ranking.value === value) return
+  selectRanking(value)
   return loadRepositories()
 }
 
 function removeSearchCondition(condition: 'keyword' | 'language' | 'all') {
   if (requestBlocked.value) return
-  keyword.value = condition === 'keyword' || condition === 'all' ? '' : activeFilters.value.keyword ?? ''
-  language.value = condition === 'language' || condition === 'all' ? '' : activeFilters.value.language ?? ''
-  return submitSearch()
+  removeCondition(condition)
+  return loadRepositories()
 }
 
 async function loadMore() {
   const previous = state.value
-  if (requestBlocked.value || previous.status !== 'ready' || !previous.nextPage) return
+  if (requestBlocked.value || previous.status !== 'ready') return
+  if (visibleLimit.value < previous.repositories.length) {
+    visibleLimit.value += SEARCH_PAGE_SIZE
+    return
+  }
+  if (!previous.nextPage) return
 
   activeRequest.value = 'more'
   moreFailure.value = undefined
@@ -118,6 +137,7 @@ async function loadMore() {
       repositories: [...repositories.values()],
       incomplete: previous.incomplete || result.incomplete,
     }
+    visibleLimit.value = repositories.size
   } catch (error) {
     moreFailure.value = requestFailure(error)
   } finally {
@@ -240,7 +260,7 @@ onUnmounted(() => window.clearTimeout(retryTimer))
         <li v-for="repository in bookmarks" :key="repository.id" :data-reading-id="`saved-${repository.id}`">
           <RepositoryCard :repository="repository" bookmarked @toggle-bookmark="toggleBookmark(repository)">
             <template #actions>
-              <button type="button" class="repo-bookmark" :disabled="requestBlocked" @click="loadRecommendations(repository)">似たリポジトリを探す</button>
+              <button type="button" class="similar-button" :disabled="requestBlocked" @click="loadRecommendations(repository)">似たリポジトリを探す <span aria-hidden="true">→</span></button>
             </template>
           </RepositoryCard>
         </li>
@@ -254,7 +274,7 @@ onUnmounted(() => window.clearTimeout(retryTimer))
       <section class="hero" aria-labelledby="page-title">
         <div class="hero-content">
           <h1 id="page-title">OSSを見つける</h1>
-          <p class="hero-description">直近{{ SEARCH_WINDOW_DAYS }}日・{{ SEARCH_MIN_STARS }}スター以上の公開リポジトリ</p>
+          <p class="hero-description">{{ SEARCH_MIN_STARS }}スター以上のOSSを、気になる条件から。</p>
         </div>
       </section>
 
@@ -280,12 +300,22 @@ onUnmounted(() => window.clearTimeout(retryTimer))
       </form>
     </div>
 
+    <div v-show="view === 'search'" class="ranking-toolbar">
+      <RankingSelector :model-value="ranking" :disabled="requestBlocked" @update:model-value="changeRanking" />
+      <p id="ranking-description" class="ranking-description">{{ rankingInfo.description }}</p>
+      <details class="ranking-method">
+        <summary>集計について</summary>
+        <p>今日・今週・今月は、リポジトリの作成期間で絞り、現在の累計スター数で並べています。期間中に増えたスター数のランキングではありません。日付の区切りは日本時間、週の始まりは月曜日です。</p>
+        <p>急上昇は目安です。直近30日間に作成されたスター数上位100件の候補を、累計スター数 ÷ 公開日数（最低1日）で比較します。総合は作成期間を制限しません。いずれも100スター以上の公開リポジトリが対象です。</p>
+      </details>
+    </div>
+
     <section v-show="view === 'search'" class="results" aria-labelledby="results-title">
       <div class="results-header">
         <div class="results-heading">
-          <h2 id="results-title">リポジトリ一覧</h2>
+          <h2 id="results-title">{{ rankingInfo.title }}</h2>
           <p class="results-caption" aria-live="polite">
-            <template v-if="state.status === 'ready'">{{ state.repositories.length }} 件を表示</template>
+            <template v-if="state.status === 'ready'">{{ visibleRepositories.length }} 件を表示</template>
             <template v-else>最大{{ SEARCH_PAGE_SIZE }}件</template>
           </p>
         </div>
@@ -314,6 +344,8 @@ onUnmounted(() => window.clearTimeout(retryTimer))
         <button
           v-if="activeFilters.language"
           type="button"
+          class="language-filter"
+          :style="{ '--language-color': languageColor(activeFilters.language) }"
           :disabled="requestBlocked"
           :aria-label="`言語「${activeFilters.language}」を解除`"
           @click="removeSearchCondition('language')"
@@ -350,11 +382,20 @@ onUnmounted(() => window.clearTimeout(retryTimer))
             >言語の指定を外して再検索</button>
             <button v-else type="button" class="refresh-button" :disabled="requestBlocked" @click="removeSearchCondition('all')">条件をクリアして探す</button>
           </template>
+          <button
+            v-if="!state.incomplete && broaderRanking"
+            type="button"
+            class="refresh-button"
+            :disabled="requestBlocked"
+            @click="changeRanking(broaderRanking)"
+          >{{ broaderRanking === 'month' ? '期間を広げて今月を見る' : '総合ランキングを見る' }}</button>
         </div>
-        <ul v-else class="repository-grid" role="list" aria-label="リポジトリ一覧">
-          <li v-for="repository in state.repositories" :key="repository.id" :data-reading-id="`search-${repository.id}`">
+        <ol v-else class="repository-grid" role="list" aria-label="リポジトリ一覧">
+          <li v-for="(repository, index) in visibleRepositories" :key="repository.id" :data-reading-id="`search-${repository.id}`">
             <RepositoryCard
               :repository="repository"
+              :position="index + 1"
+              :daily-stars="ranking === 'rising' ? risingScore(repository, rankingReference) : undefined"
               :bookmarked="bookmarkIds.has(repository.id)"
               @toggle-bookmark="toggleBookmark(repository)"
             >
@@ -363,8 +404,8 @@ onUnmounted(() => window.clearTimeout(retryTimer))
               </template>
             </RepositoryCard>
           </li>
-        </ul>
-        <div v-if="state.nextPage" class="more-results">
+        </ol>
+        <div v-if="hasMore" class="more-results">
           <p v-if="moreFailure" role="alert">{{ requestErrorText(moreFailure, '続きの結果を取得できませんでした。') }}</p>
           <button type="button" class="refresh-button" :disabled="requestBlocked" @click="loadMore">
             {{ activeRequest === 'more' ? '続きを取得中…' : 'もっと見る' }}

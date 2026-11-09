@@ -9,7 +9,7 @@ import type { Repository } from '../github'
 import { translateToJapanese } from '../translation'
 import { languageColor } from '../languageColors'
 
-const props = defineProps<{ repository: Repository; bookmarked?: boolean }>()
+const props = defineProps<{ repository: Repository; bookmarked?: boolean; position?: number; dailyStars?: number }>()
 const emit = defineEmits<{ toggleBookmark: [] }>()
 const card = ref<HTMLElement>()
 const original = computed(() => props.repository.description?.trim() ?? '')
@@ -112,6 +112,7 @@ onUnmounted(() => {
 
     <div class="repo-meta">
       <div class="repo-facts">
+        <span v-if="position" class="repo-position"><span class="visually-hidden">順位 </span>{{ position }}位</span>
         <span
           class="repo-language"
           :class="{ 'repo-missing': !repository.language }"
@@ -126,6 +127,7 @@ onUnmounted(() => {
           <span class="visually-hidden">スター数 </span>{{ numberFormat.format(repository.stars) }}
         </span>
       </div>
+      <p v-if="dailyStars !== undefined" class="repo-growth">公開後平均 {{ numberFormat.format(Math.round(dailyStars)) }} スター / 日</p>
       <dl class="repo-dates">
         <div>
           <dt>作成</dt>
