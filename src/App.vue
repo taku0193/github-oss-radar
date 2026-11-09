@@ -372,15 +372,14 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
       </form>
     </div>
 
-    <div v-show="view === 'search'">
-      <SearchTools :filters="activeFilters" :disabled="requestBlocked" @apply="applySavedSearch">
-        <template #filters><TopicFilter :value="activeFilters.topic" :disabled="requestBlocked" @change="changeTopic" /></template>
-      </SearchTools>
-      <p v-if="searchMemoryError" class="utility-message" role="status">{{ searchMemoryError }}</p>
-    </div>
-
     <div v-show="view === 'search'" class="ranking-toolbar">
-      <RankingSelector :model-value="ranking" :disabled="requestBlocked" @update:model-value="changeRanking" />
+      <div class="discovery-controls">
+        <RankingSelector :model-value="ranking" :disabled="requestBlocked" @update:model-value="changeRanking" />
+        <SearchTools :filters="activeFilters" :disabled="requestBlocked" @apply="applySavedSearch">
+          <template #filters><TopicFilter :value="activeFilters.topic" :disabled="requestBlocked" @change="changeTopic" /></template>
+        </SearchTools>
+      </div>
+      <p v-if="searchMemoryError" class="utility-message" role="status">{{ searchMemoryError }}</p>
       <p id="ranking-description" class="ranking-description">{{ rankingInfo.description }}</p>
       <details class="ranking-method">
         <summary>集計について</summary>

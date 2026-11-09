@@ -24,7 +24,7 @@ function toggleTag(tag: string) {
     <form v-if="editing" :id="editorId" class="bookmark-editor" @submit.prevent="emit('save', note, tags)">
       <label>メモ<textarea v-model="note" rows="3" maxlength="2000" placeholder="気になった理由や、試したい使い方" /></label>
       <label>タグ（カンマ区切り）<input v-model="tags" placeholder="例 試したい, CLI" maxlength="175" /></label>
-      <div class="tag-presets"><button v-for="tag in presets" :key="tag" type="button" @click="toggleTag(tag)">{{ tag }}</button></div>
+      <div class="tag-presets"><button v-for="tag in presets" :key="tag" type="button" :aria-pressed="tags.split(/[,、\n]/).some((value) => value.trim() === tag)" @click="toggleTag(tag)">{{ tag }}</button></div>
       <p class="results-caption">メモは2,000文字、タグは8個まで。このブラウザに保存されます。</p>
       <button type="submit" class="refresh-button">メモを保存</button>
     </form>

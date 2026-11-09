@@ -549,6 +549,15 @@ button:disabled { opacity: 0.6; cursor: default; }
 .bookmark-editor textarea { resize: vertical; }
 .bookmark-editor > .refresh-button { justify-self: start; }
 .bookmark-notice { margin-bottom: var(--space-4); }
+.discovery-controls { width: 100%; display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 10px 24px; }
+.discovery-controls > .search-tools { padding-top: 0; min-width: 0; flex: 1; min-width: min(100%, 22rem); }
+.discovery-controls .search-tools > .toolbar-actions { min-height: 50px; justify-content: flex-end; }
+.tag-presets button[aria-pressed="true"] { border-color: var(--forest); color: var(--forest); background: var(--accent-wash); }
+@media (max-width: 780px) {
+  .discovery-controls { gap: 6px; }
+  .discovery-controls > .search-tools { flex-basis: 100%; }
+  .discovery-controls .search-tools > .toolbar-actions { min-height: 32px; justify-content: flex-start; }
+}
 
 @media (max-width: 980px) {
   .shell { width: calc(100% - 2 * var(--container-gutter-tablet)); }

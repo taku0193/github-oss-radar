@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Repository } from '../github'
 import { languageColor } from '../languageColors'
+import { translateToJapanese } from '../translation'
 
 const props = defineProps<{ open: boolean; repositories: Repository[] }>()
 const emit = defineEmits<{ close: [] }>()
 const dialog = ref<HTMLDialogElement>()
+const translations = ref<Record<number, string>>({})
+let controller: AbortController | undefined
 const number = new Intl.NumberFormat('ja-JP')
 const date = new Intl.DateTimeFormat('ja-JP', { dateStyle: 'medium', timeZone: 'Asia/Tokyo' })
 const rows: { label: string; value: (repository: Repository) => string }[] = [
-  { label: '説明', value: (repo) => repo.description || '説明はありません' },
+  { label: '説明', value: (repo) => translations.value[repo.id] || repo.description || '説明はありません' },
   { label: 'スター数', value: (repo) => number.format(repo.stars) },
   { label: '言語', value: (repo) => repo.language || '言語未設定' },
   { label: '作成日', value: (repo) => date.format(new Date(repo.createdAt)) },
@@ -22,8 +25,21 @@ function synchronize() {
   if (props.open && !dialog.value?.open) dialog.value?.showModal()
   else if (!props.open && dialog.value?.open) dialog.value.close()
 }
-onMounted(synchronize)
-watch(() => props.open, synchronize, { flush: 'post' })
+async function translateDescriptions() {
+  controller?.abort()
+  if (!props.open) return
+  const request = new AbortController()
+  controller = request
+  const entries = await Promise.all(props.repositories.map(async (repo) => {
+    const text = repo.description ?? ''
+    try { return [repo.id, await translateToJapanese(text, request.signal)] as const }
+    catch { return [repo.id, text] as const }
+  }))
+  if (!request.signal.aborted) translations.value = Object.fromEntries(entries)
+}
+onMounted(() => { synchronize(); void translateDescriptions() })
+watch(() => props.open, () => { synchronize(); void translateDescriptions() }, { flush: 'post' })
+onUnmounted(() => controller?.abort())
 </script>
 
 <template>
