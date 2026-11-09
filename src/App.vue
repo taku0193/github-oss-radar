@@ -51,7 +51,7 @@ const visibleBookmarks = computed(() => selectedBookmarkTag.value
 const bookmarkNotice = ref('')
 watch(bookmarkTags, (tags) => { if (selectedBookmarkTag.value && !tags.includes(selectedBookmarkTag.value)) selectedBookmarkTag.value = '' })
 const bookmarkIds = computed(() => new Set(bookmarks.value.map(({ id }) => id)))
-const { view, recommendationOrigin, show, openRecommendations, backFromRecommendations, resetSearchPosition } = useBrowseNavigation()
+const { view, recommendationOrigin, show, openRecommendations, backFromRecommendations, resetSearchPosition, preserveSearchPosition } = useBrowseNavigation()
 const bookmarkError = ref('')
 const { repositories: comparison, ids: comparisonIds, full: comparisonFull, canCompare, toggle: toggleComparison, clear: clearComparison } = useComparison()
 const comparisonOpen = ref(false)
@@ -149,7 +149,7 @@ async function loadMore() {
   const previous = state.value
   if (requestBlocked.value || previous.status !== 'ready') return
   if (visibleLimit.value < previous.repositories.length) {
-    visibleLimit.value += SEARCH_PAGE_SIZE
+    await preserveSearchPosition(() => { visibleLimit.value += SEARCH_PAGE_SIZE })
     return
   }
   if (!previous.nextPage) return
@@ -162,13 +162,15 @@ async function loadMore() {
     for (const repository of result.repositories) {
       if (!repositories.has(repository.id)) repositories.set(repository.id, repository)
     }
-    state.value = {
-      status: 'ready',
-      ...result,
-      repositories: [...repositories.values()],
-      incomplete: previous.incomplete || result.incomplete,
-    }
-    visibleLimit.value = repositories.size
+    await preserveSearchPosition(() => {
+      state.value = {
+        status: 'ready',
+        ...result,
+        repositories: [...repositories.values()],
+        incomplete: previous.incomplete || result.incomplete,
+      }
+      visibleLimit.value = repositories.size
+    })
   } catch (error) {
     moreFailure.value = requestFailure(error)
   } finally {

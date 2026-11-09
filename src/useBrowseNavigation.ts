@@ -64,6 +64,13 @@ export function useBrowseNavigation(
     if (view.value === 'search') scrollTo({ top: 0 })
   }
 
+  async function preserveSearchPosition(update: () => void) {
+    const position = view.value === 'search' ? readPosition() : undefined
+    update()
+    await nextTick()
+    if (position && view.value === 'search') scrollTo(position)
+  }
+
   return {
     view,
     recommendationOrigin,
@@ -71,5 +78,6 @@ export function useBrowseNavigation(
     openRecommendations,
     backFromRecommendations: () => show(recommendationOrigin.value),
     resetSearchPosition,
+    preserveSearchPosition,
   }
 }
