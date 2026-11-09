@@ -36,7 +36,7 @@
 - **検索画面を共有する。** ランキング・キーワード・言語・トピックをURLに含めて共有。メモやタグは共有URLに含みません。
 - **似た候補へ進む。** カードから共通トピック・同じ言語の候補を探し、元の一覧の閲覧位置へ戻れます。
 - **閲覧を続けやすく。** GitHubは別タブで開きます。カードは画面幅に応じて3列・2列・1列に切り替わります。
-- **操作に動きで応える。** カードの順次表示、ランキング下線の移動、保存時の反応を用意。OSの動きを減らす設定にも対応します。
+- **操作に動きで応える。** Astryxのモーション基盤を採用。カードが順に浮かび上がり、ランキングの選択面が移動し、比較欄は下からせり上がります。OSの動きを減らす設定にも対応します。
 
 ## 画面を見てみる
 
@@ -152,3 +152,5 @@ flowchart LR
 機能単位のブランチで、**Red → Green → Refactor**の順に実装します。VitestではAPI通信をモックし、日付の境界、ランキング、比較上限、URL復元、ストレージの破損・書き込み失敗を検証します。
 
 デザインの方針と参考サイトは[`DESIGN.md`](./DESIGN.md)に記録しています。Open DesignのWarm Editorialから取り込んだトークンのライセンスは[`public/licenses/open-design.txt`](./public/licenses/open-design.txt)に含めています。
+
+[MetaのAstryx](https://github.com/meta/astryx)の時間尺度の生成関数・expressive曲線・Neutralテーマの角丸と影をVueのUIに利用しています。取り込み内容は[`src/astryx/NOTICE.md`](./src/astryx/NOTICE.md)、MITライセンスは[`public/licenses/astryx.txt`](./public/licenses/astryx.txt)を参照してください。
