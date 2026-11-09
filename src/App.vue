@@ -254,9 +254,10 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
 </script>
 
 <template>
+  <div class="app-layout">
   <header class="topbar">
-    <div class="shell topbar-inner">
-      <div class="brand">
+    <div class="topbar-inner">
+      <div class="brand" aria-label="GitHub OSS Radar">
         <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 28 28" fill="none">
             <circle cx="14" cy="14" r="9" />
@@ -265,18 +266,28 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
             <circle cx="14" cy="14" r="1" fill="currentColor" />
           </svg>
         </span>
-        <span>GitHub OSS Radar</span>
+        <span class="brand-text"><span class="brand-kicker">GITHUB</span><strong class="brand-wordmark">OSS Radar<span>.</span></strong></span>
       </div>
+      <span class="sidebar-caption">ワークスペース</span>
       <nav class="view-nav" aria-label="画面切り替え">
-        <button type="button" :aria-current="(view === 'search' || view === 'recommendations' && recommendationOrigin === 'search') ? 'page' : undefined" @click="showView(false)">探す</button>
+        <button type="button" :aria-current="(view === 'search' || view === 'recommendations' && recommendationOrigin === 'search') ? 'page' : undefined" @click="showView(false)">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></svg><span>探す</span><span class="nav-arrow" aria-hidden="true">↗</span>
+        </button>
         <button type="button" :aria-current="(view === 'saved' || view === 'recommendations' && recommendationOrigin === 'saved') ? 'page' : undefined" @click="showView(true)">
-          保存済み <span class="nav-count">{{ bookmarks.length }}</span>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4h12v16l-6-4-6 4V4Z"/></svg><span>保存済み</span> <span class="nav-count">{{ bookmarks.length }}</span>
         </button>
       </nav>
     </div>
-    <p v-if="bookmarkError" class="shell bookmark-error" role="alert">{{ bookmarkError }}</p>
+    <div class="sidebar-bottom">
+      <svg class="sidebar-radar" viewBox="0 0 128 128" fill="none" aria-hidden="true"><circle cx="64" cy="64" r="52"/><circle cx="64" cy="64" r="34"/><circle cx="64" cy="64" r="16"/><path d="M64 7v114M7 64h114M64 64l37-37"/><circle cx="64" cy="64" r="4"/><circle cx="32" cy="88" r="3"/></svg>
+      <p class="sidebar-statement">次の道具を、<br />ここから。</p>
+      <p class="sidebar-footnote"><span aria-hidden="true">✦</span> {{ SEARCH_MIN_STARS }}スター以上の公開OSS</p>
+    </div>
+    <p v-if="bookmarkError" class="bookmark-error" role="alert">{{ bookmarkError }}</p>
   </header>
 
+  <div class="workspace">
+  <div class="workspace-topline"><p>ワークスペース <span aria-hidden="true">/</span> <strong>{{ view === 'saved' ? '保存したOSS' : view === 'recommendations' ? '関連するOSS' : 'ディスカバリー' }}</strong></p><span class="workspace-source">GitHubの公開データ</span></div>
   <main class="shell dashboard" :class="{ 'dashboard--with-tray': comparison.length }">
     <section v-if="recommendation" v-show="view === 'recommendations'" class="collection" aria-labelledby="recommendation-title">
       <div class="results-header">
@@ -344,8 +355,9 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
     <div v-show="view === 'search'" class="discovery-header">
       <section class="hero" aria-labelledby="page-title">
         <div class="hero-content">
+          <p class="hero-eyebrow">THE OPEN SOURCE INDEX</p>
           <h1 id="page-title">OSSを見つける</h1>
-          <p class="hero-description">{{ SEARCH_MIN_STARS }}スター以上のOSSを、気になる条件から。</p>
+          <p class="hero-description">気になる道具を、あなたの目録へ。</p>
         </div>
       </section>
 
@@ -380,12 +392,14 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
         </SearchTools>
       </div>
       <p v-if="searchMemoryError" class="utility-message" role="status">{{ searchMemoryError }}</p>
+      <div class="ranking-context">
       <p id="ranking-description" class="ranking-description">{{ rankingInfo.description }}</p>
       <details class="ranking-method">
         <summary>集計について</summary>
         <p>今日・今週・今月は、リポジトリの作成期間で絞り、現在の累計スター数で並べています。期間中に増えたスター数のランキングではありません。日付の区切りは日本時間、週の始まりは月曜日です。</p>
         <p>急上昇は目安です。直近30日間に作成されたスター数上位100件の候補を、累計スター数 ÷ 公開日数（最低1日）で比較します。総合は作成期間を制限しません。いずれも100スター以上の公開リポジトリが対象です。</p>
       </details>
+      </div>
     </div>
 
     <section v-show="view === 'search'" class="results" aria-labelledby="results-title">
@@ -497,6 +511,13 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
     </section>
   </main>
 
+  <footer class="shell footer">
+    <span>GitHub OSS Radar <span class="footer-separator">/</span> あなたの、次の発見。</span>
+    <span>データ提供元 GitHub</span>
+  </footer>
+  </div>
+  </div>
+
   <aside v-if="comparison.length" class="comparison-tray" aria-label="比較候補">
     <div class="shell comparison-tray-inner">
       <div class="comparison-selection">
@@ -511,8 +532,4 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
   </aside>
   <CompareDialog :open="comparisonOpen" :repositories="comparison" @close="comparisonOpen = false" />
 
-  <footer class="shell footer">
-    <span>GitHub OSS Radar</span>
-    <span>データ提供元 GitHub</span>
-  </footer>
 </template>

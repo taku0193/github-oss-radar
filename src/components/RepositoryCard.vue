@@ -76,7 +76,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <article ref="card" class="repo-card">
+  <article ref="card" class="repo-card" :style="{ '--repo-accent': languageColor(repository.language) }">
     <div class="repo-card-top">
       <div class="repo-identity">
         <span class="repo-avatar" aria-hidden="true">
