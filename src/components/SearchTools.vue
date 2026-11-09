@@ -50,12 +50,13 @@ onMounted(() => {
       <button type="button" class="utility-button" :aria-expanded="panel === 'list'" :disabled="disabled" @click="panel = panel === 'list' ? null : 'list'">保存した条件 <span class="nav-count">{{ saved.length }}</span></button>
       <button type="button" class="utility-button" @click="share">URLをコピー <span aria-hidden="true">↗</span></button>
     </div>
-    <form v-if="panel === 'save'" class="search-panel save-search-form" @submit.prevent="save">
+    <Transition name="panel" mode="out-in">
+    <form v-if="panel === 'save'" class="search-panel save-search-form" :inert="panel !== 'save'" @submit.prevent="save">
       <label>検索条件の名前<input v-model="name" maxlength="40" required /></label>
       <button type="submit" class="refresh-button" :disabled="disabled">この条件を保存</button>
       <p class="results-caption">表示中の結果に適用した条件を、このブラウザに保存します。</p>
     </form>
-    <div v-if="panel === 'list'" class="search-panel">
+    <div v-else-if="panel === 'list'" class="search-panel" :inert="panel !== 'list'">
       <p v-if="!saved.length" class="results-caption">保存した検索条件はありません。「条件を保存」から追加できます。</p>
       <ul v-else class="saved-searches">
         <li v-for="item in saved" :key="item.id">
@@ -64,6 +65,7 @@ onMounted(() => {
         </li>
       </ul>
     </div>
+    </Transition>
     <p v-if="message" class="utility-message" role="status">{{ message }}</p>
     <input v-if="manualURL" class="share-url" aria-label="共有用URL" :value="manualURL" readonly />
   </div>

@@ -14,7 +14,8 @@ function choose(topic: string) { emit('change', normalizeTopic(topic)); open.val
 <template>
   <div class="topic-picker">
     <button type="button" class="utility-button" :disabled="disabled" :aria-expanded="open" @click="open = !open">用途・トピック<span v-if="value" class="active-topic">{{ label }}</span><span aria-hidden="true">⌄</span></button>
-    <div v-if="open" class="topic-panel search-panel">
+    <Transition name="panel">
+    <div v-if="open" class="topic-panel search-panel" :inert="!open">
       <div class="results-header"><strong>何に使いたいですか？</strong><button type="button" class="text-button" @click="open = false">閉じる</button></div>
       <div class="topic-choices">
         <button type="button" :aria-pressed="!value" :disabled="disabled" @click="choose('')">すべて</button>
@@ -26,5 +27,6 @@ function choose(topic: string) { emit('change', normalizeTopic(topic)); open.val
       </form>
       <p class="results-caption">GitHubのトピックが付いているリポジトリに絞り込みます。</p>
     </div>
+    </Transition>
   </div>
 </template>

@@ -8,8 +8,9 @@ import { computed, nextTick, onMounted, onUnmounted, ref, useId, watch } from 'v
 import type { Repository } from '../github'
 import { translateToJapanese } from '../translation'
 import { languageColor } from '../languageColors'
+import { cardRevealDelay } from '../astryx/motion'
 
-const props = defineProps<{ repository: Repository; bookmarked?: boolean; position?: number; dailyStars?: number; compared?: boolean; compareDisabled?: boolean }>()
+const props = defineProps<{ repository: Repository; bookmarked?: boolean; position?: number; revealIndex?: number; dailyStars?: number; compared?: boolean; compareDisabled?: boolean }>()
 const emit = defineEmits<{ toggleBookmark: []; toggleCompare: [] }>()
 const card = ref<HTMLElement>()
 const cardVisible = ref(false)
@@ -82,7 +83,7 @@ onUnmounted(() => {
     ref="card"
     class="repo-card"
     :class="{ 'repo-card--waiting': !cardVisible, 'repo-card--entered': cardVisible }"
-    :style="{ '--repo-accent': languageColor(repository.language), '--reveal-delay': `${((position ?? 1) - 1) % 3 * 45}ms` }"
+    :style="{ '--repo-accent': languageColor(repository.language), '--reveal-delay': `${cardRevealDelay(revealIndex ?? (position ?? 1) - 1)}ms` }"
   >
     <div class="repo-card-top">
       <div class="repo-identity">

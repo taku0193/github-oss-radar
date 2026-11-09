@@ -10,7 +10,7 @@ const name = useId()
 <template>
   <fieldset class="ranking-selector" :style="{ '--active-ranking': rankingOptions.findIndex((option) => option.value === modelValue) }" :disabled="disabled" aria-describedby="ranking-description">
     <legend class="visually-hidden">ランキングの種類</legend>
-    <span class="ranking-underline" aria-hidden="true"></span>
+    <span class="ranking-indicator" aria-hidden="true"></span>
     <label v-for="option in rankingOptions" :key="option.value" class="ranking-option">
       <input
         class="visually-hidden"

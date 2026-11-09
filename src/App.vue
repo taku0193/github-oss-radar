@@ -290,8 +290,8 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
 
   <div class="workspace">
   <div class="workspace-topline"><p>ワークスペース <span aria-hidden="true">/</span> <strong>{{ view === 'saved' ? '保存したOSS' : view === 'recommendations' ? '関連するOSS' : 'ディスカバリー' }}</strong></p><span class="workspace-source">GitHubの公開データ</span></div>
-  <main class="shell dashboard" :class="{ 'dashboard--with-tray': comparison.length }">
-    <section v-if="recommendation" v-show="view === 'recommendations'" class="collection" aria-labelledby="recommendation-title">
+  <main class="shell dashboard" :class="[`dashboard--${view}`, { 'dashboard--with-tray': comparison.length }]">
+    <section v-if="recommendation" v-show="view === 'recommendations'" class="collection collection--recommendations" aria-labelledby="recommendation-title">
       <div class="results-header">
         <div>
           <h1 id="recommendation-title" class="saved-title">似たリポジトリ</h1>
@@ -309,9 +309,10 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
       <div v-else-if="recommendation.status === 'ready'">
         <p v-if="recommendation.incomplete" class="partial-note" role="status">GitHub から一部の結果のみ返されました。</p>
         <ul v-if="recommendation.repositories.length" class="repository-grid" role="list" aria-label="推薦リポジトリ">
-          <li v-for="repository in recommendation.repositories" :key="repository.id">
+          <li v-for="(repository, index) in recommendation.repositories" :key="repository.id">
             <RepositoryCard
               :repository="repository"
+              :reveal-index="index"
               :bookmarked="bookmarkIds.has(repository.id)"
               :compared="comparisonIds.has(repository.id)"
               :compare-disabled="comparisonFull"
@@ -330,7 +331,7 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
         <button type="button" class="refresh-button" :disabled="requestBlocked" @click="loadRecommendations(recommendation.seed)">もう一度探す</button>
       </div>
     </section>
-    <section v-show="view === 'saved'" class="collection" aria-labelledby="saved-title">
+    <section v-show="view === 'saved'" class="collection collection--saved" aria-labelledby="saved-title">
       <div class="results-header">
         <div>
           <h1 id="saved-title" class="saved-title">保存済みリポジトリ</h1>
@@ -340,8 +341,8 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
       </div>
       <p v-if="bookmarkNotice" class="utility-message bookmark-notice" role="status">{{ bookmarkNotice }}</p>
       <ul v-if="visibleBookmarks.length" class="repository-grid" role="list" aria-label="保存済みリポジトリ">
-        <li v-for="repository in visibleBookmarks" :key="repository.id" :data-reading-id="`saved-${repository.id}`">
-          <RepositoryCard :repository="repository" bookmarked :compared="comparisonIds.has(repository.id)" :compare-disabled="comparisonFull" @toggle-compare="toggleComparison(repository)" @toggle-bookmark="toggleBookmark(repository)">
+        <li v-for="(repository, index) in visibleBookmarks" :key="repository.id" :data-reading-id="`saved-${repository.id}`">
+          <RepositoryCard :repository="repository" :reveal-index="index" bookmarked :compared="comparisonIds.has(repository.id)" :compare-disabled="comparisonFull" @toggle-compare="toggleComparison(repository)" @toggle-bookmark="toggleBookmark(repository)">
             <template #notes><BookmarkNotes :name="repository.name" :annotation="bookmarkNotes[repository.id]" @save="(note, tags) => saveBookmarkNote(repository, note, tags)" /></template>
             <template #actions>
               <button type="button" class="similar-button" :disabled="requestBlocked" @click="loadRecommendations(repository)">似たリポジトリを探す <span aria-hidden="true">→</span></button>
@@ -520,6 +521,7 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
   </div>
   </div>
 
+  <Transition name="tray">
   <aside v-if="comparison.length" class="comparison-tray" aria-label="比較候補">
     <div class="shell comparison-tray-inner">
       <div class="comparison-selection">
@@ -532,6 +534,7 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
       </div>
     </div>
   </aside>
+  </Transition>
   <CompareDialog :open="comparisonOpen" :repositories="comparison" @close="comparisonOpen = false" />
 
 </template>
