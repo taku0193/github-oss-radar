@@ -1,5 +1,6 @@
 import { SEARCH_KEYWORD_LIMIT, type SearchFilters } from './github'
 import { rankingOptions, type RankingMode } from './rankings'
+import { normalizeTopic } from './topics'
 
 type ReadStorage = Pick<Storage, 'getItem'>
 type WriteStorage = Pick<Storage, 'getItem' | 'setItem'>
@@ -14,9 +15,9 @@ export function normalizeSearch(value: unknown): SearchFilters {
   const clean = (value: unknown, limit: number) => typeof value === 'string' ? value.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, limit) : ''
   const keyword = clean(source.keyword, SEARCH_KEYWORD_LIMIT)
   const language = clean(source.language, 64)
-  const topic = clean(source.topic, 50).toLowerCase()
+  const topic = normalizeTopic(typeof source.topic === 'string' ? source.topic : '')
   return { ranking, ...(keyword ? { keyword } : {}), ...(language ? { language } : {}),
-    ...(/^[a-z0-9][a-z0-9-]{0,49}$/.test(topic) ? { topic } : {}) }
+    ...(topic ? { topic } : {}) }
 }
 
 export function parseSearchURL(value: string): SearchFilters {

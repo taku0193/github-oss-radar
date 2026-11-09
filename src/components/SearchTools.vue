@@ -45,6 +45,7 @@ onMounted(() => {
 <template>
   <div class="search-tools">
     <div class="toolbar-actions">
+      <slot name="filters" />
       <button type="button" class="utility-button" :aria-expanded="panel === 'save'" :disabled="disabled" @click="openSave">条件を保存</button>
       <button type="button" class="utility-button" :aria-expanded="panel === 'list'" :disabled="disabled" @click="panel = panel === 'list' ? null : 'list'">保存した条件 <span class="nav-count">{{ saved.length }}</span></button>
       <button type="button" class="utility-button" @click="share">URLをコピー <span aria-hidden="true">↗</span></button>

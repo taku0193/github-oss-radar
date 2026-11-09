@@ -1,4 +1,5 @@
 import { rankingSince, RISING_CANDIDATE_LIMIT, sortRising, type RankingMode } from './rankings'
+import { normalizeTopic } from './topics'
 
 export const SEARCH_WINDOW_DAYS = 30
 export const SEARCH_PAGE_SIZE = 24
@@ -78,11 +79,12 @@ export async function searchRepositories(
   const since = cutoff?.toISOString().replace(/\.\d{3}Z$/, 'Z')
   const terms = filters.keyword?.slice(0, SEARCH_KEYWORD_LIMIT).match(/[^\s:"\\]+/g) ?? []
   const language = filters.language?.replace(/["\\]/g, '').trim()
+  const topic = normalizeTopic(filters.topic)
   const query = [
     ...terms.map((term) => `"${term}"`),
     terms.length && 'in:name,description',
     language && `language:"${language}"`,
-    filters.topic && `topic:${filters.topic}`,
+    topic && `topic:${topic}`,
     since && `created:>=${since}`,
     `stars:>=${SEARCH_MIN_STARS}`,
     'is:public',

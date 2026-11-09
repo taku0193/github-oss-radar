@@ -5,6 +5,7 @@ import RepositoryCard from './components/RepositoryCard.vue'
 import RankingSelector from './components/RankingSelector.vue'
 import CompareDialog from './components/CompareDialog.vue'
 import SearchTools from './components/SearchTools.vue'
+import TopicFilter from './components/TopicFilter.vue'
 import { initialSearch, parseSearchURL, rememberSearch, searchURL } from './searchPreferences'
 import { useComparison } from './comparison'
 import {
@@ -46,7 +47,7 @@ const bookmarkError = ref('')
 const { repositories: comparison, ids: comparisonIds, full: comparisonFull, canCompare, toggle: toggleComparison, clear: clearComparison } = useComparison()
 const comparisonOpen = ref(false)
 const { keyword, language, activeFilters, ranking, hasAppliedFilters, hasDraftChanges,
-  applyDraft, selectRanking, removeCondition, restoreFilters } = useSearchFilters()
+  applyDraft, selectRanking, selectTopic, removeCondition, restoreFilters } = useSearchFilters()
 const searchMemoryError = ref('')
 let pendingNavigation: SearchFilters | undefined
 const languages = ['JavaScript', 'TypeScript', 'Python', 'Rust', 'Go', 'Ruby', 'Java', 'C', 'C++', 'C#', 'Dart', 'Kotlin', 'Swift', 'PHP', 'Shell', 'HTML', 'CSS', 'Vue']
@@ -123,7 +124,13 @@ function changeRanking(value: RankingMode) {
   return loadRepositories()
 }
 
-function removeSearchCondition(condition: 'keyword' | 'language' | 'all') {
+function changeTopic(topic: string) {
+  if (requestBlocked.value) return
+  selectTopic(topic)
+  return loadRepositories()
+}
+
+function removeSearchCondition(condition: 'keyword' | 'language' | 'topic' | 'all') {
   if (requestBlocked.value) return
   removeCondition(condition)
   return loadRepositories()
@@ -345,7 +352,9 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
     </div>
 
     <div v-show="view === 'search'">
-      <SearchTools :filters="activeFilters" :disabled="requestBlocked" @apply="applySavedSearch" />
+      <SearchTools :filters="activeFilters" :disabled="requestBlocked" @apply="applySavedSearch">
+        <template #filters><TopicFilter :value="activeFilters.topic" :disabled="requestBlocked" @change="changeTopic" /></template>
+      </SearchTools>
       <p v-if="searchMemoryError" class="utility-message" role="status">{{ searchMemoryError }}</p>
     </div>
 
@@ -399,6 +408,7 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
           :aria-label="`言語「${activeFilters.language}」を解除`"
           @click="removeSearchCondition('language')"
         >{{ activeFilters.language }} <span aria-hidden="true">×</span></button>
+        <button v-if="activeFilters.topic" type="button" :disabled="requestBlocked" :aria-label="`トピック「${activeFilters.topic}」を解除`" @click="removeSearchCondition('topic')">#{{ activeFilters.topic }} <span aria-hidden="true">×</span></button>
         <button type="button" class="clear-filters" :disabled="requestBlocked" @click="removeSearchCondition('all')">すべて解除</button>
       </div>
       <p v-if="hasDraftChanges" class="draft-note" role="status">条件を変更しています。「検索」で結果を更新できます。</p>

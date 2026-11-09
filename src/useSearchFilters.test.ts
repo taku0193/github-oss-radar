@@ -2,6 +2,27 @@ import { describe, expect, it } from 'vitest'
 import { useSearchFilters } from './useSearchFilters'
 
 describe('search filters', () => {
+  it('combines a selected topic with submitted text and preserves it across ranking changes', () => {
+    const filters = useSearchFilters()
+    filters.selectTopic('cli')
+    filters.keyword.value = 'editor'
+    filters.applyDraft()
+    filters.selectRanking('week')
+    expect(filters.activeFilters.value).toEqual({ ranking: 'week', keyword: 'editor', language: '', topic: 'cli' })
+    expect(filters.hasAppliedFilters.value).toBe(true)
+    filters.removeCondition('topic')
+    expect(filters.activeFilters.value.topic).toBeUndefined()
+    expect(filters.activeFilters.value.keyword).toBe('editor')
+  })
+
+  it('restores a shared topic and clears it with all conditions', () => {
+    const filters = useSearchFilters()
+    filters.restoreFilters({ ranking: 'all', topic: 'developer-tools', language: 'Rust' })
+    filters.removeCondition('all')
+    expect(filters.activeFilters.value.topic).toBeUndefined()
+    expect(filters.ranking.value).toBe('all')
+  })
+
   it('starts with rising discovery and no text or language restriction', () => {
     const filters = useSearchFilters()
     expect(filters.ranking.value).toBe('rising')

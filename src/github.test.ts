@@ -17,6 +17,16 @@ const item = {
 }
 
 describe('searchRepositories', () => {
+  it('applies a single topic and rejects qualifier injection through custom topics', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => Response.json({ items: [] }))
+    await searchRepositories(fetcher, now, { topic: 'cli', ranking: 'all' })
+    expect(new URL(String(fetcher.mock.calls[0]![0])).searchParams.get('q')).toContain('topic:cli')
+    await searchRepositories(fetcher, now, { topic: 'cli stars:0', ranking: 'all' })
+    const query = new URL(String(fetcher.mock.calls[1]![0])).searchParams.get('q')!
+    expect(query).not.toContain('topic:')
+    expect(query).not.toContain('stars:0')
+    expect(query).toContain('stars:>=100')
+  })
   it('includes detected licenses for comparison without inventing a license for missing data', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ items: [
       { ...item, license: { spdx_id: 'MIT', name: 'MIT License' } },
