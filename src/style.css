@@ -124,6 +124,7 @@ button:disabled { opacity: 0.6; cursor: default; }
   font-weight: 720;
   letter-spacing: -.045em;
 }
+.hero h1 > span { display: inline-block; white-space: nowrap; }
 .hero-content { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .hero-copy { min-width: 0; }
 .discovery-signal { width: 260px; height: 120px; margin-block: -14px; flex: none; }
@@ -230,7 +231,7 @@ button:disabled { opacity: 0.6; cursor: default; }
   margin: 0;
   padding: 4px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--radius-container);
   background: #eaf0f7;
 }
 .ranking-option { position: relative; cursor: pointer; text-align: center; }
@@ -639,7 +640,7 @@ button:disabled { opacity: 0.6; cursor: default; }
 .share-url { width: min(100%, 42rem); font-size: var(--text-xs); }
 .search-tools > .toolbar-actions { position: relative; }
 .topic-picker { display: contents; }
-.topic-panel { position: absolute; top: calc(100% + 8px); left: 0; z-index: 3; width: min(38rem, 100%); box-shadow: 0 8px 24px #181b2014; }
+.topic-panel { position: absolute; top: calc(100% + 8px); left: 0; z-index: 3; width: min(38rem, 100%); border-radius: var(--radius-container); box-shadow: 0 8px 24px #181b2014; }
 .topic-panel .results-header { align-items: center; margin-bottom: 8px; }
 .topic-panel strong { font-size: var(--text-sm); }
 .active-topic { color: var(--accent); font-weight: 650; }

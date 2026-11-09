@@ -352,7 +352,7 @@ onUnmounted(() => { window.clearTimeout(retryTimer); window.removeEventListener(
       <section class="hero" aria-labelledby="page-title">
         <div class="hero-content">
           <div class="hero-copy">
-            <h1 id="page-title">次に使うOSSを<wbr>見つける</h1>
+            <h1 id="page-title"><span>次に使うOSSを</span><span>見つける</span></h1>
             <p class="hero-description">キーワードや用途から探して、気になるプロジェクトを保存。</p>
           </div>
           <DiscoverySignal />
