@@ -1,64 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420" role="img" aria-labelledby="title description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" role="img" aria-labelledby="title">
   <title id="title">GitHub OSS Radar</title>
-  <desc id="description">Find your next open source. Discover, compare, and collect GitHub projects in your browser.</desc>
   <defs>
-    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
-      <path d="M32 0H0V32" fill="none" stroke="#263650" stroke-width=".75"/>
+    <clipPath id="cover">
+      <rect width="1280" height="320" rx="16"/>
+    </clipPath>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M24 0H0V24" fill="none" stroke="#263b5e" stroke-width="1"/>
     </pattern>
-    <linearGradient id="sweep" x1="0" y1="1" x2="1" y2="0">
-      <stop stop-color="#3778f6" stop-opacity="0"/>
-      <stop offset="1" stop-color="#3778f6" stop-opacity=".3"/>
-    </linearGradient>
-    <clipPath id="boundary"><rect width="1280" height="420" rx="20"/></clipPath>
   </defs>
-  <g clip-path="url(#boundary)">
-    <rect width="1280" height="420" fill="#111c30"/>
-    <path d="M716 0h564v420H716z" fill="url(#grid)" opacity=".55"/>
-    <path d="M716 0v420" stroke="#263650"/>
-    <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
-      <g transform="translate(60 44)">
-        <rect width="32" height="32" rx="9" fill="#3778f6"/>
-        <g transform="translate(16 16)" fill="none" stroke="#fff">
-          <circle r="10" stroke-opacity=".35"/><circle r="5" stroke-opacity=".6"/>
-          <path d="M0 0 7-7" stroke-width="2" stroke-linecap="round"/>
-          <circle r="1.8" fill="#fff" stroke="none"/>
-        </g>
-        <text x="46" y="22" fill="#f6f8fc" font-size="19" font-weight="650" letter-spacing=".5">GITHUB OSS RADAR</text>
+  <g clip-path="url(#cover)">
+    <rect width="1280" height="320" fill="#111b2e"/>
+    <path d="M730 0h550v320H730z" fill="#142139"/>
+    <path d="M730 0h550v320H730z" fill="url(#grid)" opacity=".45"/>
+    <path d="M730 0v320" stroke="#314467"/>
+    <path d="M60 255h608" stroke="#314467"/>
+
+    <g transform="translate(60 62)" fill="none" stroke="#a9c4ff" stroke-linecap="round">
+      <rect width="44" height="44" rx="11" fill="#285ad7" stroke="none"/>
+      <circle cx="22" cy="22" r="12" opacity=".45"/>
+      <circle cx="22" cy="22" r="6" opacity=".65"/>
+      <path d="m22 22 8.5-8.5" stroke="#fff" stroke-width="2"/>
+      <circle cx="22" cy="22" r="2" fill="#fff" stroke="none"/>
+    </g>
+    <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif">
+      <text x="119" y="91" fill="#bdcce5" font-size="22" font-weight="600">GitHub</text>
+      <text x="53" y="207" fill="#f7f9ff" font-size="104" font-weight="700" letter-spacing="-5">OSS <tspan fill="#93b7ff">Radar</tspan></text>
+      <text x="60" y="286" fill="#bdcce5" font-size="15" font-weight="500" letter-spacing="2">OPEN SOURCE REPOSITORY EXPLORER</text>
+    </g>
+
+    <g transform="translate(1005 160)">
+      <g fill="none" stroke="#3b557f">
+        <path d="M-168 0h336M0-150v300" stroke-dasharray="2 6"/>
+        <circle r="134" stroke-dasharray="1 6"/>
+        <circle r="112"/>
+        <circle r="84"/>
+        <circle r="56"/>
+        <circle r="28"/>
       </g>
-      <text x="57" y="165" fill="#f6f8fc" font-size="67" font-weight="700" letter-spacing="-2.5">Find your next</text>
-      <text x="57" y="240" fill="#80aaff" font-size="67" font-weight="700" letter-spacing="-2.5">open source.</text>
-      <text x="61" y="286" fill="#acbdd5" font-size="17" letter-spacing=".25">Discover. Compare. Make it yours.</text>
-      <path d="M60 341h1160" stroke="#2c3b52"/>
-      <text x="61" y="383" fill="#acbdd5" font-size="12" font-weight="500" letter-spacing="1.5">VUE 3</text>
-      <circle cx="132" cy="379" r="2" fill="#536983"/>
-      <text x="150" y="383" fill="#acbdd5" font-size="12" font-weight="500" letter-spacing="1.5">TYPESCRIPT</text>
-      <circle cx="265" cy="379" r="2" fill="#536983"/>
-      <text x="283" y="383" fill="#acbdd5" font-size="12" font-weight="500" letter-spacing="1.5">GITHUB REST API</text>
-      <text x="1220" y="383" text-anchor="end" fill="#acbdd5" font-size="11" letter-spacing="1.7">BUILT FOR THE CURIOUS.</text>
+      <path d="M0 0V-112A112 112 0 0 1 79.2-79.2Z" fill="#3159a2" opacity=".5"/>
+      <path d="M0 0 79.2-79.2" stroke="#93b7ff" stroke-width="2"/>
+      <circle r="4.5" fill="#f7f9ff"/>
+      <circle cx="-68" cy="-48" r="5" fill="#8cb4ff"/>
+      <circle cx="44" cy="35" r="4" fill="#efbf6d"/>
+      <circle cx="-14" cy="83" r="3.5" fill="#77c9bc"/>
+      <circle cx="-68" cy="-48" r="11" fill="none" stroke="#8cb4ff" stroke-opacity=".35"/>
+      <circle cx="44" cy="35" r="9" fill="none" stroke="#efbf6d" stroke-opacity=".35"/>
     </g>
-    <g transform="translate(995 173)">
-      <g fill="none" stroke="#365073">
-        <circle r="126"/><circle r="94"/><circle r="62"/><circle r="30"/>
-        <path d="M-144 0h288M0-144v288" stroke-dasharray="3 7"/>
-      </g>
-      <path d="M0 0 0-126A126 126 0 0 1 89-89Z" fill="url(#sweep)"/>
-      <path d="M0 0 89-89" stroke="#80aaff" stroke-width="2"/>
-      <circle r="6" fill="#f6f8fc"/>
-      <circle cx="-56" cy="27" r="5" fill="#80aaff"/>
-      <circle cx="48" cy="49" r="5" fill="#e4bc69"/>
-      <circle cx="-30" cy="-89" r="4" fill="#6fc1b5"/>
-      <circle cx="-56" cy="27" r="11" fill="none" stroke="#80aaff" stroke-opacity=".3"/>
-      <circle cx="48" cy="49" r="11" fill="none" stroke="#e4bc69" stroke-opacity=".3"/>
-    </g>
-    <g fill="#1b2b44" stroke="#3b5273" stroke-width="1">
-      <rect x="803" y="72" width="44" height="44" rx="12"/>
-      <rect x="1143" y="154" width="44" height="44" rx="12"/>
-      <rect x="845" y="267" width="44" height="44" rx="12"/>
-    </g>
-    <g fill="none" stroke="#a8c6ff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="823" cy="92" r="7"/><path d="m828 97 6 6"/>
-      <path d="M1156 166h7v18h-7zM1168 170h7v14h-7z"/>
-      <path d="M861 281h12v17l-6-4-6 4z"/>
+    <g fill="none" stroke="#6886b7" stroke-width="1.5">
+      <path d="M788 58V34h24m386 0h24v24m0 204v24h-24m-386 0h-24v-24"/>
     </g>
   </g>
 </svg>
